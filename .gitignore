@@ -1,0 +1,48 @@
+# Dependencies
+node_modules/
+
+# Env and secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Build / coverage
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Uploads (local disk adapter)
+server/uploads/
+!server/uploads/.gitkeep
+
+# Expo / React Native
+mobile/.expo/
+mobile/dist/
+mobile/web-build/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Test artifacts
+.mongodb-memory-server*
+
+# Misc
+.turbo/
+.cache/

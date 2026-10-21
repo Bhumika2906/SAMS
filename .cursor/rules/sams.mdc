@@ -1,0 +1,49 @@
+---
+description: SAMS stack, statuses, API envelope, and server-enforced business rules
+alwaysApply: true
+---
+
+# SAMS
+
+Mobile-only LNMIIT admission app. Complete **one phase per message**, then typecheck, lint, test, commit, and wait for "continue".
+
+## Stack (do not substitute)
+
+npm workspaces: `mobile`, `server`, `shared`, docs in `/docs`. Expo SDK **58** (Expo Go). React Native Paper, TanStack Query + Axios, RHF + Zod, expo-secure-store, expo-camera CameraView, react-native-qrcode-svg, document/image pickers. Server: Express + TS, Mongoose, Zod, JWT + bcrypt, helmet, rate-limit, mongo-sanitize, multer, pino, Jest + Supertest + mongodb-memory-server. Status vocab and transition tables live **only** in `@sams/shared`.
+
+## API
+
+`/api/v1` JSON: `{ success, data, error?: { code, message, details? } }`. 200/201, 400, 401, 403, 404, 409 (bad transition/conflict), 429. Zod on every route. Role from **JWT user**, never the client body.
+
+```ts
+// ❌ BAD — trusting req.body.role
+if (req.body.role === 'AdministratorUser') { /* ... */ }
+
+// ✅ GOOD — guard uses req.user.role from the token
+requireRoles('AdministratorUser')(req, res, next);
+```
+
+## Statuses (separate fields)
+
+Application.status: Draft → Submitted → UnderReview → Eligible | Rejected.
+admissionStage: Registered, ApplicationInProgress, Submitted, UnderReview, Eligible, InRound, Waitlisted, SeatConfirmed, PaymentPending, PaymentCompleted, VerificationPending, AdmissionConfirmed; terminals Rejected, NotAllotted, Withdrawn.
+SeatAllotment: publication Proposed | Published | Revised; result Allotted | Waitlisted | NotAllotted; response Pending | Accepted | OptedNextRound | Declined | Expired.
+Round: Draft | Open | AllotmentRun | Published | Closed.
+Document: Uploaded | UnderVerification | Rejected. Payment: Pending | Success | Failed.
+Checklist: NotGenerated → Pending → PartiallyVerified → FullyVerified. Item: Pending | Verified | NotVerified.
+QR: Valid | Used | Expired | Revoked.
+
+## Business rules
+
+- Verified account before application start; submit only when mandatory sections+docs complete; then lock (admin override audited).
+- **No capacity overflow** — allot from the seat matrix with transactions or atomic conditional updates; test concurrent runs.
+- Payment only after seat confirmation; success ≠ verification. Checklist + QR only after payment success (idempotent, once).
+- QR payload is an opaque ≥128-bit token (hash at rest), never applicant PII.
+- Only assigned-counter faculty may scan/verify. Items become Verified only via the faculty endpoint.
+- Final admission = seat confirmed + payment success + all mandatory items Verified.
+- Management is read-only. Applicants access only their own data. AuditLog on publish, revise, verify, override, payment outcome.
+- No TODO stubs, fake buttons, static charts, or frontend-only state for real flows. Simulated payment/OTP/email must be labelled and work without external credentials.
+
+## Done bar
+
+Before finishing a phase: `npm run typecheck`, `npm run lint`, `npm test` at repo root. Do not claim a check passed unless it ran.
