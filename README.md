@@ -44,66 +44,30 @@ Simulated payment and email/SMS adapters log to the server console so the produc
 
 The client must not be trusted to assert a role. See `docs/SPEC.md`.
 
-## Status (Phase 0)
+## Status: Completed End-to-End Demo Prototype (Phases 0 - 5)
 
-Scaffold only: workspaces, TypeScript, ESLint, env examples, and documentation. Domain features start in Phase 1.
+Complete working presentation prototype demonstrating the full LNMIIT student admission lifecycle:
+- **Phase 0 & 1:** Shared domain models, RBAC, JWT auth, MongoDB schemas, and role shells.
+- **Phase 2:** Form draft & submission (locked on submit, local document uploads, progress tracker).
+- **Phase 3:** Admission rounds, seat matrix configuration, deterministic merit-order allotment algorithm, and applicant accept/decline.
+- **Phase 4:** Simulated fee payment gateway, automated digital checklist and QR gate pass token generation, faculty counter verification interface with item-by-item status updates, and final admission confirmation.
+- **Phase 5:** Pre-seeded demo state (8 applicants across stages), executive read-only management dashboard, and demo presentation script.
 
-## Prerequisites
+## Quick Start & Demo Execution
 
-- Node.js **22.13+** (Expo SDK 58)
-- npm 10+
-- MongoDB local (`mongod`) or Docker for development; Atlas free tier for production
-- Expo Go (SDK 58) on a phone, or an emulator
+1. Start MongoDB: Ensure MongoDB is running locally on port 27017 or configure `MONGODB_URI` in `server/.env`.
+2. Seed the database with demo accounts & states:
+   ```bash
+   npm run seed
+   ```
+3. Start the API server:
+   ```bash
+   npm run server
+   ```
+4. In a separate terminal, launch the Expo mobile app:
+   ```bash
+   npm run mobile
+   ```
 
-## Setup
+See [`docs/DEMO_SCRIPT.md`](docs/DEMO_SCRIPT.md) for the exact step-by-step presentation walkthrough and demo accounts.
 
-```bash
-git clone <this-repo>
-cd SAMS
-cp server/.env.example server/.env
-cp mobile/.env.example mobile/.env
-npm install
-```
-
-Set `MONGODB_URI` and a long `JWT_SECRET` in `server/.env`. Never commit `.env` files.
-
-### MongoDB
-
-- Local: `mongodb://127.0.0.1:27017/sams`
-- Docker: `docker run -d --name sams-mongo -p 27017:27017 mongo:7`
-- Atlas: use the connection string in `MONGODB_URI`
-
-### Reach the API from a phone
-
-Expo Go cannot call `localhost` on the device. Use:
-
-- LAN: `EXPO_PUBLIC_API_URL=http://<your-lan-ip>:4000/api/v1` (same Wi-Fi; allow the firewall)
-- Tunnel: ngrok or similar to the API port
-- Deployed API HTTPS URL
-
-## Commands
-
-| Command | What it does |
-| --- | --- |
-| `npm run typecheck` | TypeScript across workspaces |
-| `npm run lint` | ESLint across workspaces |
-| `npm test` | Jest (shared + server; mobile passWithNoTests until UI tests exist) |
-| `npm run seed` | Development seed (implemented in Phase 1) |
-| `npm run server` | API (`tsx` watch in development) |
-| `npm run mobile` | Expo start |
-
-Demo accounts (after seed, **local only**, password `Password@123`): `applicant1@sams.test` … `applicant8@sams.test`, `admin@sams.test`, `faculty1@sams.test`, `faculty2@sams.test`, `management@sams.test`.
-
-## Documentation
-
-- `docs/SPEC.md` — workflow, statuses, business rules
-- `docs/ALLOTMENT.md` — deterministic allotment
-- `docs/REQUIREMENT_CHANGES.md` — vs lab assignments 1–5
-- `docs/MANUAL_TEST.md` and `docs/TRACEABILITY.md` — filled in later phases
-
-## Known limitations (Phase 0)
-
-- No running API or screens yet
-- Seed, auth, and domain tests land in Phase 1+
-- Email/SMS and payment are simulated by design
-- Category quota in allotment is a documented stretch goal

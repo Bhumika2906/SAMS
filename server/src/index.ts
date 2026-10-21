@@ -1,14 +1,23 @@
-import { API_PREFIX } from '@sams/shared';
+import { createApp } from './app';
+import { loadConfig } from './config';
+import { connectDb } from './db';
+import { logger } from './logger';
 
-export function describeScaffold(): { apiPrefix: typeof API_PREFIX } {
-  return { apiPrefix: API_PREFIX };
-}
+async function startServer(): Promise<void> {
+  const config = loadConfig();
+  await connectDb(config.MONGODB_URI);
 
-function main(): void {
-  const { apiPrefix } = describeScaffold();
-  console.info(`SAMS API scaffold (Phase 0). Routes will mount at ${apiPrefix} in Phase 1.`);
+  const app = createApp();
+  app.listen(config.PORT, '0.0.0.0', () => {
+    logger.info(`SAMS Server listening on port ${config.PORT} (env: ${config.NODE_ENV})`);
+  });
 }
 
 if (require.main === module) {
-  main();
+  startServer().catch((err) => {
+    logger.error({ err }, 'Failed to start SAMS Server');
+    process.exit(1);
+  });
 }
+
+export { createApp, startServer };

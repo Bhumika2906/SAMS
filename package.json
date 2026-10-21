@@ -16,6 +16,7 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "eslint .",
     "test": "npm run test --workspaces --if-present",
+    "db": "npm run db -w server",
     "seed": "npm run seed -w server",
     "server": "npm run dev -w server",
     "mobile": "npm run start -w mobile"

@@ -1,11 +1,14 @@
-import { API_PREFIX, SAMS_WORKSPACE } from './index';
+import { API_PREFIX, UserRole } from './index';
 
-describe('@sams/shared scaffold', () => {
+describe('@sams/shared', () => {
   it('exports the v1 API prefix', () => {
     expect(API_PREFIX).toBe('/api/v1');
   });
 
-  it('identifies the shared workspace', () => {
-    expect(SAMS_WORKSPACE).toBe('shared');
+  it('defines the four user roles', () => {
+    expect(UserRole.Applicant).toBe('Applicant');
+    expect(UserRole.AdministratorUser).toBe('AdministratorUser');
+    expect(UserRole.FacultyVerifier).toBe('FacultyVerifier');
+    expect(UserRole.Management).toBe('Management');
   });
 });
