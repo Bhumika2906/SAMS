@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { Button, Card, Chip, Surface, Text } from 'react-native-paper';
+import { Button, Card, Surface, Text } from 'react-native-paper';
 import { useAuth } from '../../src/context/AuthContext';
 import { theme } from '../../src/theme/theme';
 
@@ -12,19 +12,12 @@ export default function AdminOverviewScreen() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Surface style={styles.headerCard} elevation={1}>
-        <View style={styles.headerRow}>
-          <View>
-            <Text variant="headlineSmall" style={styles.title}>
-              Administrator Overview
-            </Text>
-            <Text variant="bodySmall" style={styles.subtitle}>
-              Signed in as {user?.fullName} ({user?.email})
-            </Text>
-          </View>
-          <Chip mode="flat" style={styles.roleChip} textStyle={styles.roleChipText}>
-            SuperAdmin
-          </Chip>
-        </View>
+        <Text variant="headlineSmall" style={styles.title}>
+          Administrator Overview
+        </Text>
+        <Text variant="bodySmall" style={styles.subtitle}>
+          Signed in as {user?.fullName} ({user?.email})
+        </Text>
       </Surface>
 
       <Text variant="titleMedium" style={styles.sectionTitle}>
@@ -93,25 +86,13 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 20,
   },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
   title: {
     color: '#0F2C59',
     fontWeight: '800',
   },
   subtitle: {
     color: '#64748B',
-    marginTop: 2,
-  },
-  roleChip: {
-    backgroundColor: '#FFE5D9',
-  },
-  roleChipText: {
-    color: '#C45C26',
-    fontWeight: '700',
+    marginTop: 4,
   },
   sectionTitle: {
     color: '#0F2C59',

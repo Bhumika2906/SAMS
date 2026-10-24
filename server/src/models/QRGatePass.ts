@@ -5,6 +5,8 @@ const qrGatePassSchema = new Schema(
   {
     applicationId: { type: Schema.Types.ObjectId, ref: 'Application', required: true, unique: true },
     tokenHash: { type: String, required: true, unique: true },
+    rawToken: { type: String, default: null },
+    passCode: { type: String, default: null },
     purpose: { type: String, default: 'Campus Document Verification' },
     date: { type: String, required: true },
     timeSlot: { type: String, required: true },

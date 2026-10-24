@@ -41,10 +41,14 @@ apiClient.interceptors.response.use(
       await removeAuthToken();
       await removeStoredUser();
     }
-    const message =
-      (error.response?.data && !error.response.data.success && error.response.data.error?.message) ||
-      error.message ||
-      'An unexpected error occurred';
+    const errData = error.response?.data && !error.response.data.success ? error.response.data.error : null;
+    let message = errData?.message || error.message || 'An unexpected error occurred';
+    if (errData?.details && typeof errData.details === 'object' && 'fieldErrors' in errData.details) {
+      const fieldErrors = Object.values((errData.details as any).fieldErrors).flat() as string[];
+      if (fieldErrors.length > 0) {
+        message = fieldErrors.join(', ');
+      }
+    }
     return Promise.reject(new Error(message));
   },
 );

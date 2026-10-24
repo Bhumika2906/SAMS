@@ -22,12 +22,33 @@ export default function RegisterScreen() {
       setErrorMessage('Please fill in all mandatory fields.');
       return;
     }
-    if (password !== confirmPassword) {
-      setErrorMessage('Passwords do not match.');
+    if (fullName.trim().length < 2) {
+      setErrorMessage('Full name must be at least 2 characters long.');
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      setErrorMessage('Please enter a valid email address.');
       return;
     }
     if (password.length < 8) {
       setErrorMessage('Password must be at least 8 characters long.');
+      return;
+    }
+    if (!/[a-z]/.test(password)) {
+      setErrorMessage('Password must contain at least one lowercase letter (a-z).');
+      return;
+    }
+    if (!/[A-Z]/.test(password)) {
+      setErrorMessage('Password must contain at least one uppercase letter (A-Z).');
+      return;
+    }
+    if (!/\d/.test(password)) {
+      setErrorMessage('Password must contain at least one number (0-9).');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setErrorMessage('Passwords do not match.');
       return;
     }
 

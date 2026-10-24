@@ -71,7 +71,7 @@ export default function AdminRoundsScreen() {
     >
       <Surface style={styles.headerCard} elevation={1}>
         <View style={styles.headerRow}>
-          <View>
+          <View style={styles.headerText}>
             <Text variant="headlineSmall" style={styles.title}>
               Admission Rounds
             </Text>
@@ -86,6 +86,7 @@ export default function AdminRoundsScreen() {
             loading={isCreating}
             disabled={isCreating}
             compact
+            style={styles.newRoundBtn}
           >
             + New Round
           </Button>
@@ -105,16 +106,21 @@ export default function AdminRoundsScreen() {
 
       {rounds.map((round) => (
         <Card key={round._id} style={styles.card} mode="elevated">
-          <Card.Title
-            title={round.name}
-            subtitle={`Round #${round.roundNumber}`}
-            right={() => (
+          <Card.Content>
+            <View style={styles.roundCardHeader}>
+              <View style={styles.roundTitleBox}>
+                <Text variant="titleMedium" style={styles.roundName}>
+                  {round.name}
+                </Text>
+                <Text variant="bodySmall" style={styles.roundSub}>
+                  Round #{round.roundNumber}
+                </Text>
+              </View>
               <Chip mode="flat" style={styles.chip} textStyle={styles.chipText}>
                 {round.status}
               </Chip>
-            )}
-          />
-          <Card.Content>
+            </View>
+
             <Text variant="labelMedium" style={styles.matrixHeader}>
               SEAT MATRIX ALLOCATION:
             </Text>
@@ -151,6 +157,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  headerText: {
+    flex: 1,
+    minWidth: 160,
   },
   title: {
     color: '#0F2C59',
@@ -160,10 +172,34 @@ const styles = StyleSheet.create({
     color: '#64748B',
     marginTop: 2,
   },
+  newRoundBtn: {
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
   card: {
     backgroundColor: '#FFFFFF',
     marginBottom: 12,
     borderRadius: 12,
+  },
+  roundCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 12,
+  },
+  roundTitleBox: {
+    flex: 1,
+    minWidth: 160,
+  },
+  roundName: {
+    color: '#0F2C59',
+    fontWeight: '700',
+  },
+  roundSub: {
+    color: '#64748B',
+    marginTop: 2,
   },
   cardTitle: {
     color: '#0F2C59',
@@ -174,8 +210,8 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   chip: {
-    marginRight: 16,
     backgroundColor: '#DDE6ED',
+    alignSelf: 'flex-start',
   },
   chipText: {
     color: '#0F2C59',

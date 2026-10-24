@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { Card, Chip, Surface, Text } from 'react-native-paper';
 
 export default function FacultyHistoryScreen() {
@@ -15,16 +15,20 @@ export default function FacultyHistoryScreen() {
       </Surface>
 
       <Card style={styles.card} mode="outlined">
-        <Card.Title
-          title="Past Verifications"
-          subtitle="Audit trail with verifier ID and timestamps"
-          right={() => (
+        <Card.Content>
+          <View style={styles.cardHeaderRow}>
+            <View style={styles.cardHeaderLeft}>
+              <Text variant="titleMedium" style={styles.cardTitle}>
+                Past Verifications
+              </Text>
+              <Text variant="bodySmall" style={styles.cardSubtitle}>
+                Audit trail with verifier ID and timestamps
+              </Text>
+            </View>
             <Chip mode="flat" style={styles.chip} textStyle={styles.chipText}>
               Audit Log
             </Chip>
-          )}
-        />
-        <Card.Content>
+          </View>
           <Text variant="bodySmall" style={styles.bodyText}>
             Every verification action records the verifier ID and timestamp into the AuditLog on the server.
           </Text>
@@ -57,9 +61,29 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderColor: '#E2E8F0',
   },
+  cardHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 8,
+  },
+  cardHeaderLeft: {
+    flex: 1,
+    minWidth: 160,
+  },
+  cardTitle: {
+    color: '#0F2C59',
+    fontWeight: '700',
+  },
+  cardSubtitle: {
+    color: '#64748B',
+    marginTop: 2,
+  },
   chip: {
-    marginRight: 16,
     backgroundColor: '#F1F5F9',
+    alignSelf: 'flex-start',
   },
   chipText: {
     color: '#64748B',

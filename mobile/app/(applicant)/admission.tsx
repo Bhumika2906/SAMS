@@ -106,10 +106,16 @@ export default function ApplicantAdmissionScreen() {
 
       {allotment ? (
         <Card style={styles.allotmentCard} mode="elevated">
-          <Card.Title
-            title="Round 1 Allotment Result"
-            subtitle={`Merit Rank: ${allotment.allottedRank || application?.meritRank || 'N/A'}`}
-            right={() => (
+          <Card.Content>
+            <View style={styles.cardHeaderRow}>
+              <View style={styles.cardHeaderLeft}>
+                <Text variant="titleMedium" style={styles.allotmentCardTitle}>
+                  Round 1 Allotment Result
+                </Text>
+                <Text variant="bodySmall" style={styles.meritText}>
+                  Merit Rank: {allotment.allottedRank || application?.meritRank || 'N/A'}
+                </Text>
+              </View>
               <Chip
                 mode="flat"
                 style={[
@@ -120,9 +126,7 @@ export default function ApplicantAdmissionScreen() {
               >
                 {allotment.response === 'Accepted' ? 'Seat Confirmed' : allotment.result}
               </Chip>
-            )}
-          />
-          <Card.Content>
+            </View>
             <View style={styles.progBox}>
               <Text variant="labelMedium" style={styles.progLabel}>
                 ALLOTTED PROGRAMME
@@ -236,8 +240,28 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 16,
   },
+  cardHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 8,
+  },
+  cardHeaderLeft: {
+    flex: 1,
+    minWidth: 160,
+  },
+  allotmentCardTitle: {
+    color: '#0F2C59',
+    fontWeight: '700',
+  },
+  meritText: {
+    color: '#64748B',
+    marginTop: 2,
+  },
   statusChip: {
-    marginRight: 16,
+    alignSelf: 'flex-start',
   },
   pendingChip: {
     backgroundColor: '#FFE5D9',
@@ -279,6 +303,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
   },
   responseLabel: {
     color: '#475569',
@@ -289,11 +315,13 @@ const styles = StyleSheet.create({
   },
   actionButtonGroup: {
     flexDirection: 'row',
-    gap: 12,
+    flexWrap: 'wrap',
+    gap: 10,
     marginTop: 20,
   },
   actionBtn: {
     flex: 1,
+    minWidth: 120,
     borderRadius: 8,
   },
   declineBtn: {

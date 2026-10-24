@@ -129,16 +129,20 @@ export default function AdminAllotmentScreen() {
 
       {activeRound ? (
         <Card style={styles.controlCard} mode="elevated">
-          <Card.Title
-            title={activeRound.name}
-            subtitle={`Status: ${activeRound.status}`}
-            right={() => (
+          <Card.Content>
+            <View style={styles.controlHeaderRow}>
+              <View style={styles.controlHeaderLeft}>
+                <Text variant="titleMedium" style={styles.controlTitle}>
+                  {activeRound.name}
+                </Text>
+                <Text variant="bodySmall" style={styles.controlSub}>
+                  Status: {activeRound.status}
+                </Text>
+              </View>
               <Chip mode="flat" style={styles.roundChip} textStyle={styles.roundChipText}>
                 {activeRound.status}
               </Chip>
-            )}
-          />
-          <Card.Content>
+            </View>
             <View style={styles.actionBtnRow}>
               <Button
                 mode="contained"
@@ -239,9 +243,29 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 16,
   },
+  controlHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 12,
+  },
+  controlHeaderLeft: {
+    flex: 1,
+    minWidth: 160,
+  },
+  controlTitle: {
+    color: '#0F2C59',
+    fontWeight: '700',
+  },
+  controlSub: {
+    color: '#64748B',
+    marginTop: 2,
+  },
   roundChip: {
-    marginRight: 16,
     backgroundColor: '#DDE6ED',
+    alignSelf: 'flex-start',
   },
   roundChipText: {
     color: '#0F2C59',
@@ -249,11 +273,13 @@ const styles = StyleSheet.create({
   },
   actionBtnRow: {
     flexDirection: 'row',
-    gap: 12,
+    flexWrap: 'wrap',
+    gap: 10,
     marginTop: 4,
   },
   actionBtn: {
     flex: 1,
+    minWidth: 130,
     borderRadius: 8,
   },
   sectionHeader: {
@@ -276,11 +302,14 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    flexWrap: 'wrap',
+    gap: 8,
   },
   leftCol: {
     flex: 1,
-    marginRight: 10,
+    minWidth: 160,
+    marginRight: 6,
   },
   candidateName: {
     color: '#0F2C59',
@@ -303,7 +332,9 @@ const styles = StyleSheet.create({
     color: '#0F2C59',
   },
   rightCol: {
-    alignItems: 'flex-end',
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 6,
   },
   allottedChip: {

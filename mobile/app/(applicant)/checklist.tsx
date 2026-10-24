@@ -123,16 +123,21 @@ export default function ApplicantChecklistScreen() {
       {/* Simulated Payment Section (Only if seat accepted or payment needed) */}
       {appStage === 'SeatConfirmed' || !payment ? (
         <Card style={styles.paymentCard} mode="elevated">
-          <Card.Title
-            title="Admission Fee Payment"
-            subtitle="SIMULATED PAYMENT GATEWAY"
-            right={() => (
+          <Card.Content>
+            <View style={styles.cardHeaderRow}>
+              <View style={styles.cardHeaderLeft}>
+                <Text variant="titleMedium" style={styles.cardTitle}>
+                  Admission Fee Payment
+                </Text>
+                <Text variant="bodySmall" style={styles.cardSubtitle}>
+                  SIMULATED PAYMENT GATEWAY
+                </Text>
+              </View>
               <Chip mode="flat" style={styles.simChip} textStyle={styles.simChipText}>
                 Simulated
               </Chip>
-            )}
-          />
-          <Card.Content>
+            </View>
+
             <View style={styles.feeBox}>
               <Text variant="labelSmall" style={styles.feeLabel}>
                 DEPOSIT AMOUNT
@@ -171,31 +176,41 @@ export default function ApplicantChecklistScreen() {
         </Card>
       ) : (
         <Card style={styles.receiptCard} mode="outlined">
-          <Card.Title
-            title="Admission Payment: Completed"
-            subtitle={`Receipt No: ${payment?.receiptNumber || 'REC-LNMIIT-2026'}`}
-            right={() => (
+          <Card.Content>
+            <View style={styles.cardHeaderRow}>
+              <View style={styles.cardHeaderLeft}>
+                <Text variant="titleMedium" style={styles.receiptTitle}>
+                  Admission Payment: Completed
+                </Text>
+                <Text variant="bodySmall" style={styles.receiptSubtitle}>
+                  Receipt No: {payment?.receiptNumber || 'REC-LNMIIT-2026'}
+                </Text>
+              </View>
               <Chip mode="flat" style={styles.paidChip} textStyle={styles.paidChipText}>
-                Paid ₹150,000
+                Paid ₹160,000
               </Chip>
-            )}
-          />
+            </View>
+          </Card.Content>
         </Card>
       )}
 
       {/* QR Gate Pass Section */}
       {passData ? (
         <Card style={styles.passCard} mode="elevated">
-          <Card.Title
-            title="Campus Visit QR Gate Pass"
-            subtitle="Show this token at the verification hall entrance"
-            right={() => (
+          <Card.Content>
+            <View style={styles.cardHeaderRow}>
+              <View style={styles.cardHeaderLeft}>
+                <Text variant="titleMedium" style={styles.passTitle}>
+                  Campus Visit QR Gate Pass
+                </Text>
+                <Text variant="bodySmall" style={styles.passSubtitle}>
+                  Show this token at the verification hall entrance
+                </Text>
+              </View>
               <Chip mode="flat" style={styles.validChip} textStyle={styles.validChipText}>
                 {passData.validity}
               </Chip>
-            )}
-          />
-          <Card.Content>
+            </View>
             <Surface style={styles.qrBox} elevation={1}>
               <Text variant="labelSmall" style={styles.tokenLabel}>
                 VERIFICATION PASS TOKEN
@@ -318,9 +333,45 @@ const styles = StyleSheet.create({
     borderTopWidth: 4,
     borderTopColor: '#0F2C59',
   },
+  cardHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 8,
+  },
+  cardHeaderLeft: {
+    flex: 1,
+    minWidth: 160,
+  },
+  cardTitle: {
+    color: '#0F2C59',
+    fontWeight: '700',
+  },
+  cardSubtitle: {
+    color: '#64748B',
+    marginTop: 2,
+  },
+  receiptTitle: {
+    color: '#047857',
+    fontWeight: '700',
+  },
+  receiptSubtitle: {
+    color: '#64748B',
+    marginTop: 2,
+  },
+  passTitle: {
+    color: '#0F2C59',
+    fontWeight: '700',
+  },
+  passSubtitle: {
+    color: '#64748B',
+    marginTop: 2,
+  },
   simChip: {
-    marginRight: 16,
     backgroundColor: '#FFE5D9',
+    alignSelf: 'flex-start',
   },
   simChipText: {
     color: '#C45C26',
@@ -363,8 +414,8 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   paidChip: {
-    marginRight: 16,
     backgroundColor: '#ECFDF5',
+    alignSelf: 'flex-start',
   },
   paidChipText: {
     color: '#047857',
@@ -376,8 +427,8 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   validChip: {
-    marginRight: 16,
     backgroundColor: '#ECFDF5',
+    alignSelf: 'flex-start',
   },
   validChipText: {
     color: '#047857',
@@ -427,14 +478,16 @@ const styles = StyleSheet.create({
   checklistItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    flexWrap: 'wrap',
+    gap: 8,
     paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#F1F5F9',
   },
   itemTextCol: {
     flex: 1,
-    marginRight: 12,
+    minWidth: 150,
   },
   itemName: {
     color: '#0F2C59',
@@ -446,6 +499,7 @@ const styles = StyleSheet.create({
   },
   itemVerified: {
     backgroundColor: '#ECFDF5',
+    alignSelf: 'flex-start',
   },
   itemVerifiedText: {
     color: '#047857',
@@ -453,6 +507,7 @@ const styles = StyleSheet.create({
   },
   itemPending: {
     backgroundColor: '#FFE5D9',
+    alignSelf: 'flex-start',
   },
   itemPendingText: {
     color: '#C45C26',

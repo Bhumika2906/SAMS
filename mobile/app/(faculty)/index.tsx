@@ -13,7 +13,7 @@ export default function FacultyHomeScreen() {
     <ScrollView contentContainerStyle={styles.container}>
       <Surface style={styles.headerCard} elevation={1}>
         <View style={styles.headerRow}>
-          <View>
+          <View style={styles.headerText}>
             <Text variant="headlineSmall" style={styles.title}>
               Faculty Verifier Portal
             </Text>
@@ -84,7 +84,13 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  headerText: {
+    flex: 1,
+    minWidth: 170,
   },
   title: {
     color: '#0F2C59',
@@ -96,6 +102,7 @@ const styles = StyleSheet.create({
   },
   counterChip: {
     backgroundColor: '#DDE6ED',
+    alignSelf: 'flex-start',
   },
   counterChipText: {
     color: '#0F2C59',

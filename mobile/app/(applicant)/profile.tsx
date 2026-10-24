@@ -90,6 +90,9 @@ const styles = StyleSheet.create({
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
     paddingVertical: 10,
   },
   label: {
@@ -99,6 +102,8 @@ const styles = StyleSheet.create({
   value: {
     color: '#0F2C59',
     fontWeight: '700',
+    flexShrink: 1,
+    textAlign: 'right',
   },
   divider: {
     backgroundColor: '#F1F5F9',

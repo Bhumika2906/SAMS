@@ -47,9 +47,15 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
     return;
   }
   if (err instanceof ZodError) {
+    const flat = err.flatten();
+    const fieldMsg = Object.entries(flat.fieldErrors)
+      .map(([field, msgs]) => `${field}: ${(msgs as string[]).join(', ')}`)
+      .join('; ');
+    const message = fieldMsg || flat.formErrors.join(', ') || 'Invalid request';
+
     res.status(400).json({
       success: false,
-      error: { code: 'VALIDATION_ERROR', message: 'Invalid request', details: err.flatten() },
+      error: { code: 'VALIDATION_ERROR', message, details: flat },
     });
     return;
   }

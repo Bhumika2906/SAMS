@@ -345,6 +345,8 @@ export async function seedDatabase(): Promise<void> {
   await QRGatePass.create({
     applicationId: app6._id,
     tokenHash: tokenHash6,
+    rawToken: 'DEMO-PASS-101',
+    passCode: 'DEMO-PASS-101',
     purpose: 'Campus Document Verification',
     date: '2026-11-01',
     timeSlot: '10:00 AM - 11:30 AM',

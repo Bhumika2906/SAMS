@@ -57,16 +57,21 @@ export default function ManagementSeatsScreen() {
       ) : (
         programmes.map((p) => (
           <Card key={p._id} style={styles.card} mode="outlined">
-            <Card.Title
-              title={`${p.code} - ${p.name}`}
-              subtitle={`Tuition Fee: ₹${p.fee?.toLocaleString('en-IN')}`}
-              right={() => (
+            <Card.Content>
+              <View style={styles.cardHeaderRow}>
+                <View style={styles.cardHeaderLeft}>
+                  <Text variant="titleMedium" style={styles.progTitle}>
+                    {p.code} - {p.name}
+                  </Text>
+                  <Text variant="bodySmall" style={styles.progFee}>
+                    Tuition Fee: ₹{p.fee?.toLocaleString('en-IN')}
+                  </Text>
+                </View>
                 <Chip mode="flat" style={styles.chip} textStyle={styles.chipText}>
                   Read-Only
                 </Chip>
-              )}
-            />
-            <Card.Content>
+              </View>
+
               <View style={styles.statRow}>
                 <Text variant="bodyMedium" style={styles.statLabel}>
                   Approved Base Capacity:
@@ -108,9 +113,29 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderRadius: 12,
   },
+  cardHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 12,
+  },
+  cardHeaderLeft: {
+    flex: 1,
+    minWidth: 160,
+  },
+  progTitle: {
+    color: '#0F2C59',
+    fontWeight: '700',
+  },
+  progFee: {
+    color: '#64748B',
+    marginTop: 2,
+  },
   chip: {
-    marginRight: 16,
     backgroundColor: '#F1F5F9',
+    alignSelf: 'flex-start',
   },
   chipText: {
     color: '#475569',

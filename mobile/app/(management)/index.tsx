@@ -64,7 +64,7 @@ export default function ManagementOverviewScreen() {
     >
       <Surface style={styles.headerCard} elevation={1}>
         <View style={styles.headerRow}>
-          <View>
+          <View style={styles.headerText}>
             <Text variant="headlineSmall" style={styles.title}>
               Executive Overview
             </Text>
@@ -132,7 +132,7 @@ export default function ManagementOverviewScreen() {
         <Card key={p._id} style={styles.progCard} mode="outlined">
           <Card.Content>
             <View style={styles.progRow}>
-              <View>
+              <View style={styles.progLeft}>
                 <Text variant="titleMedium" style={{ fontWeight: '700', color: '#0F2C59' }}>
                   {p.code} - {p.name}
                 </Text>
@@ -140,7 +140,7 @@ export default function ManagementOverviewScreen() {
                   Fee: ₹{p.fee?.toLocaleString('en-IN')}
                 </Text>
               </View>
-              <Chip style={{ backgroundColor: '#EEF2F6' }} textStyle={{ fontWeight: '700', color: '#0F2C59' }}>
+              <Chip style={styles.progChip} textStyle={{ fontWeight: '700', color: '#0F2C59' }}>
                 Cap: {p.baseCapacity}
               </Chip>
             </View>
@@ -177,7 +177,13 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  headerText: {
+    flex: 1,
+    minWidth: 160,
   },
   title: {
     color: '#0F2C59',
@@ -189,6 +195,7 @@ const styles = StyleSheet.create({
   },
   readOnlyChip: {
     backgroundColor: '#E2E8F0',
+    alignSelf: 'flex-start',
   },
   readOnlyChipText: {
     color: '#475569',
@@ -231,7 +238,17 @@ const styles = StyleSheet.create({
   progRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  progLeft: {
+    flex: 1,
+    minWidth: 160,
+  },
+  progChip: {
+    backgroundColor: '#EEF2F6',
+    alignSelf: 'flex-start',
   },
   card: {
     backgroundColor: '#FFFFFF',

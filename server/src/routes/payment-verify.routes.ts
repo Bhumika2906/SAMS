@@ -8,6 +8,7 @@ import {
 } from '@sams/shared';
 import crypto from 'crypto';
 import { Router } from 'express';
+import mongoose from 'mongoose';
 import { badRequest, conflict, notFound, sendSuccess } from '../errors';
 import { authenticate, requireRoles } from '../middleware/auth';
 import {
@@ -75,12 +76,14 @@ paymentVerifyRouter.post(
 
       // Rule: Generate QR Gate Pass and Checklist ONLY after payment success (idempotent, once)
       let gatePass = await QRGatePass.findOne({ applicationId: app._id });
-      let rawToken = 'DEMO-PASS-' + Math.floor(1000 + Math.random() * 9000);
+      let passCode = 'PASS-' + Math.floor(1000 + Math.random() * 9000);
       if (!gatePass) {
-        const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+        const tokenHash = crypto.createHash('sha256').update(passCode).digest('hex');
         gatePass = await QRGatePass.create({
           applicationId: app._id,
           tokenHash,
+          rawToken: passCode,
+          passCode,
           purpose: 'Campus Document Verification',
           date: '2026-11-15',
           timeSlot: '10:00 AM - 1:00 PM',
@@ -116,7 +119,7 @@ paymentVerifyRouter.post(
       sendSuccess(res, {
         payment,
         gatePass,
-        displayToken: rawToken,
+        displayToken: gatePass.passCode || gatePass.rawToken || passCode,
         checklist,
         message: 'Admission payment successful! Digital checklist and campus gate pass generated.',
       });
@@ -167,7 +170,59 @@ paymentVerifyRouter.get(
       const pass = await QRGatePass.findOne({ applicationId: app._id });
       const checklist = await DigitalChecklist.findOne({ applicationId: app._id });
 
-      sendSuccess(res, { pass, checklist });
+      const passCode =
+        pass?.passCode ||
+        pass?.rawToken ||
+        (pass?.tokenHash ? pass.tokenHash.substring(0, 8).toUpperCase() : 'DEMO-PASS-101');
+
+      sendSuccess(res, { pass, checklist, passCode });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+/**
+ * GET /verify/candidates (Faculty & Admin)
+ * Lists all applicants who have generated checklists or gate passes
+ */
+paymentVerifyRouter.get(
+  '/candidates',
+  authenticate,
+  requireRoles(UserRole.FacultyVerifier, UserRole.AdministratorUser),
+  async (_req, res, next) => {
+    try {
+      const checklists = await DigitalChecklist.find()
+        .populate({
+          path: 'applicationId',
+          populate: { path: 'userId', select: 'fullName email' },
+        })
+        .sort({ updatedAt: -1 });
+
+      const passes = await QRGatePass.find();
+      const passMap = new Map(passes.map((p) => [p.applicationId.toString(), p]));
+
+      const candidates = checklists.map((cl) => {
+        const app = cl.applicationId as any;
+        const pass = app ? passMap.get(app._id.toString()) : null;
+        return {
+          checklistId: cl._id,
+          applicationId: app?._id,
+          candidateName: app?.userId?.fullName || 'Candidate',
+          candidateEmail: app?.userId?.email || '',
+          admissionStage: app?.admissionStage,
+          checklistStatus: cl.status,
+          passCode:
+            pass?.passCode ||
+            pass?.rawToken ||
+            (pass?.tokenHash ? pass.tokenHash.substring(0, 16).toUpperCase() : 'DEMO-PASS-101'),
+          tokenHashPrefix: pass?.tokenHash ? pass.tokenHash.substring(0, 16).toUpperCase() : 'DEMO-PASS-101',
+          itemsCount: cl.items.length,
+          verifiedCount: cl.items.filter((i) => i.status === ChecklistItemStatus.Verified).length,
+        };
+      });
+
+      sendSuccess(res, { candidates });
     } catch (err) {
       next(err);
     }
@@ -185,17 +240,60 @@ paymentVerifyRouter.post(
   async (req, res, next) => {
     try {
       const { token } = req.body;
-      if (!token) throw badRequest('Verification pass token is required');
+      let search = (token || '').trim();
+      if (search.toUpperCase().startsWith('TOKEN:')) {
+        search = search.substring(6).trim();
+      } else if (search.toUpperCase().startsWith('TOKEN ')) {
+        search = search.substring(6).trim();
+      }
 
-      // Check both raw token and sha256 hash match
-      const tokenHash = crypto.createHash('sha256').update(token.trim()).digest('hex');
-      let pass = await QRGatePass.findOne({ tokenHash });
+      if (!search) throw badRequest('Verification pass token, candidate email, or pass code is required');
+
+      const tokenHash = crypto.createHash('sha256').update(search).digest('hex');
+
+      // 1. Direct passCode, rawToken, exact tokenHash, or prefix tokenHash match
+      let pass = await QRGatePass.findOne({
+        $or: [
+          { tokenHash },
+          { passCode: { $regex: new RegExp(`^${search}$`, 'i') } },
+          { rawToken: { $regex: new RegExp(`^${search}$`, 'i') } },
+          { tokenHash: { $regex: new RegExp(`^${search}`, 'i') } },
+        ],
+      });
+
+      // 2. Lookup by candidate email or full name
       if (!pass) {
-        // Fallback demo match: allow matching by substring or pass ID for manual input simplicity
+        const user = await User.findOne({
+          $or: [
+            { email: { $regex: new RegExp(`^${search}$`, 'i') } },
+            { fullName: { $regex: new RegExp(search, 'i') } },
+          ],
+        });
+        if (user) {
+          const userApp = await Application.findOne({ userId: user._id });
+          if (userApp) {
+            pass = await QRGatePass.findOne({ applicationId: userApp._id });
+          }
+        }
+      }
+
+      // 3. Lookup by Application ID or QRGatePass ID if valid ObjectId
+      if (!pass && mongoose.Types.ObjectId.isValid(search)) {
+        pass = await QRGatePass.findOne({
+          $or: [{ applicationId: search }, { _id: search }],
+        });
+      }
+
+      // 4. Fallback only if input specifically asked for 'DEMO-PASS-101'
+      if (!pass && search.toUpperCase() === 'DEMO-PASS-101') {
         pass = await QRGatePass.findOne({ validity: GatePassValidity.Valid });
       }
 
-      if (!pass) throw notFound('Gate pass token is invalid, expired, or not found');
+      if (!pass) {
+        throw notFound(
+          `No active verification pass found for "${search}". Please enter the candidate email, name, or pass code.`,
+        );
+      }
 
       const app = await Application.findById(pass.applicationId).populate('userId', 'fullName email');
       if (!app) throw notFound('Candidate application not found');

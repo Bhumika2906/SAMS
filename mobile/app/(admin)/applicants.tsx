@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { Card, Chip, Surface, Text } from 'react-native-paper';
 
 export default function AdminApplicantsScreen() {
@@ -15,16 +15,20 @@ export default function AdminApplicantsScreen() {
       </Surface>
 
       <Card style={styles.card} mode="outlined">
-        <Card.Title
-          title="Candidate Registry"
-          subtitle="8 seeded applicants across Draft, Eligible, Allotted, Paid, Verified"
-          right={() => (
+        <Card.Content>
+          <View style={styles.cardHeaderRow}>
+            <View style={styles.cardHeaderLeft}>
+              <Text variant="titleMedium" style={styles.cardTitle}>
+                Candidate Registry
+              </Text>
+              <Text variant="bodySmall" style={styles.cardSubtitle}>
+                8 seeded applicants across Draft, Eligible, Allotted, Paid, Verified
+              </Text>
+            </View>
             <Chip mode="flat" style={styles.chip} textStyle={styles.chipText}>
               Ready for Round 1
             </Chip>
-          )}
-        />
-        <Card.Content>
+          </View>
           <Text variant="bodySmall" style={styles.bodyText}>
             Interactive applicant search, filters (Category, Status, Rank range), and eligibility status toggle are wired to backend in Phase 2.
           </Text>
@@ -57,9 +61,29 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderColor: '#E2E8F0',
   },
+  cardHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 8,
+  },
+  cardHeaderLeft: {
+    flex: 1,
+    minWidth: 160,
+  },
+  cardTitle: {
+    color: '#0F2C59',
+    fontWeight: '700',
+  },
+  cardSubtitle: {
+    color: '#64748B',
+    marginTop: 2,
+  },
   chip: {
-    marginRight: 16,
     backgroundColor: '#DDE6ED',
+    alignSelf: 'flex-start',
   },
   chipText: {
     color: '#0F2C59',

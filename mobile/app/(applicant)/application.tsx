@@ -361,29 +361,35 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 10,
-    gap: 12,
+    flexWrap: 'wrap',
+    gap: 10,
   },
   prefChip: {
     backgroundColor: '#DDE6ED',
+    alignSelf: 'flex-start',
   },
   prefName: {
     color: '#0F2C59',
     fontWeight: '700',
     flex: 1,
+    minWidth: 180,
   },
   divider: {
     backgroundColor: '#F1F5F9',
   },
   buttonGroup: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 12,
     marginTop: 8,
   },
   draftBtn: {
     flex: 1,
+    minWidth: 120,
     borderColor: '#0F2C59',
   },
   submitBtn: {
     flex: 1,
+    minWidth: 140,
   },
 });
