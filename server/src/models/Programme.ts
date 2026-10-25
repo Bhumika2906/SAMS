@@ -2,6 +2,7 @@ import mongoose, { Schema } from 'mongoose';
 
 const programmeSchema = new Schema(
   {
+    cycleId: { type: Schema.Types.ObjectId, ref: 'AdmissionCycle', default: null },
     code: { type: String, required: true, unique: true, uppercase: true, trim: true },
     name: { type: String, required: true, trim: true },
     fee: { type: Number, required: true, min: 0 },

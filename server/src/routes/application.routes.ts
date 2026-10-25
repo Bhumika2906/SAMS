@@ -9,12 +9,28 @@ import {
 import { Router } from 'express';
 import fs from 'fs';
 import multer from 'multer';
+import mongoose from 'mongoose';
 import path from 'path';
 import { badRequest, conflict, notFound, sendSuccess } from '../errors';
 import { authenticate, requireRoles } from '../middleware/auth';
-import { Application, DocumentModel, Programme, SeatAllotment } from '../models';
+import { AdmissionRound, Application, DocumentModel, Programme, SeatAllotment } from '../models';
 
 export const applicationRouter = Router();
+
+async function validatePreferences(preferences: unknown) {
+  if (!Array.isArray(preferences)) throw badRequest('Preferences must be an array');
+  const ids = preferences.map((item: any) => String(item?.programmeId || ''));
+  const orders = preferences.map((item: any) => item?.preferenceOrder);
+  if (ids.some((id) => !mongoose.isValidObjectId(id)) || new Set(ids).size !== ids.length) {
+    throw badRequest('Preferences must contain existing, non-duplicate programmes');
+  }
+  const programmes = await Programme.find({ _id: { $in: ids } }).select('_id');
+  if (programmes.length !== ids.length) throw badRequest('Preferences contain an unknown programme');
+  const sorted = [...orders].sort((a, b) => a - b);
+  if (sorted.some((order, index) => !Number.isInteger(order) || order !== index + 1)) {
+    throw badRequest('Preference order must be unique and sequential starting at 1');
+  }
+}
 
 // Multer disk storage setup
 const uploadDir = path.join(process.cwd(), 'uploads');
@@ -81,7 +97,10 @@ applicationRouter.put('/me', async (req, res, next) => {
     if (personal) application.personal = { ...application.personal, ...personal };
     if (address) application.address = { ...application.address, ...address };
     if (education) application.education = { ...application.education, ...education };
-    if (preferences) application.preferences = preferences;
+    if (preferences) {
+      await validatePreferences(preferences);
+      application.preferences = preferences;
+    }
     if (category) application.category = category;
 
     application.admissionStage = AdmissionStage.ApplicationInProgress;
@@ -116,6 +135,7 @@ applicationRouter.post('/me/submit', async (req, res, next) => {
     if (!preferences || preferences.length === 0) {
       throw badRequest('Please select at least one branch preference');
     }
+    await validatePreferences(preferences);
 
     application.locked = true;
     application.status = ApplicationStatus.Submitted;
@@ -187,10 +207,13 @@ applicationRouter.get('/me/tracker', async (req, res, next) => {
     if (!application) throw notFound('Application not found');
 
     // Check if there is a published allotment for this application
-    const latestAllotment = await SeatAllotment.findOne({
+    const currentRound = await AdmissionRound.findOne({ status: 'Published' }).sort({ roundNumber: -1 });
+    const latestAllotment = currentRound ? await SeatAllotment.findOne({
       applicationId: application._id,
+      roundId: currentRound._id,
+      active: true,
       publication: SeatPublication.Published,
-    }).sort({ createdAt: -1 });
+    }) : null;
 
     let effectiveStage = application.admissionStage;
     if (latestAllotment && latestAllotment.result === SeatResult.NotAllotted) {

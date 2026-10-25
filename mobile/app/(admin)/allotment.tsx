@@ -6,20 +6,20 @@ import { apiClient } from '../../src/api/client';
 import { theme } from '../../src/theme/theme';
 
 export default function AdminAllotmentScreen() {
-  const [rounds, setRounds] = useState<any[]>([]);
   const [activeRound, setActiveRound] = useState<any>(null);
   const [allotments, setAllotments] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const loadData = async () => {
     try {
+      setLoadError(null);
       const res = await apiClient.get('/rounds');
       if (res.data?.success && res.data.data.rounds?.length > 0) {
         const rList = res.data.data.rounds;
-        setRounds(rList);
         const selected = rList[0];
         setActiveRound(selected);
 
@@ -29,8 +29,8 @@ export default function AdminAllotmentScreen() {
           setAllotments(altRes.data.data.allotments || []);
         }
       }
-    } catch {
-      // Handled
+    } catch (err: any) {
+      setLoadError(err.message || 'Unable to load allotment data.');
     } finally {
       setIsLoading(false);
     }
@@ -124,6 +124,12 @@ export default function AdminAllotmentScreen() {
             {bannerMessage.type === 'success' ? '✅ ' : '⚠️ '}
             {bannerMessage.text}
           </Text>
+        </Surface>
+      ) : null}
+      {loadError ? (
+        <Surface style={[styles.bannerBox, styles.bannerError]} elevation={2}>
+          <Text style={styles.bannerTextError}>{loadError}</Text>
+          <Button onPress={loadData}>Retry</Button>
         </Surface>
       ) : null}
 

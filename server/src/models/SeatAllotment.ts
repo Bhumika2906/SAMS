@@ -6,6 +6,7 @@ const seatAllotmentSchema = new Schema(
     applicationId: { type: Schema.Types.ObjectId, ref: 'Application', required: true },
     roundId: { type: Schema.Types.ObjectId, ref: 'AdmissionRound', required: true },
     programmeId: { type: Schema.Types.ObjectId, ref: 'Programme', default: null },
+    active: { type: Boolean, default: false },
     publication: {
       type: String,
       enum: Object.values(SeatPublication),
@@ -23,6 +24,12 @@ const seatAllotmentSchema = new Schema(
     },
     respondedAt: { type: Date, default: null },
     allottedRank: { type: Number, default: null },
+    allocationRunId: { type: String, default: 'legacy' },
+    publishedAt: { type: Date, default: null },
+    publishedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
+    revision: { type: Number, default: 0, min: 0 },
+    supersededAt: { type: Date, default: null },
+    supersededBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
   },
   { timestamps: true },
 );
@@ -30,5 +37,10 @@ const seatAllotmentSchema = new Schema(
 seatAllotmentSchema.index({ applicationId: 1, roundId: 1 }, { unique: true });
 seatAllotmentSchema.index({ roundId: 1, result: 1 });
 seatAllotmentSchema.index({ roundId: 1, publication: 1 });
+seatAllotmentSchema.index(
+  { applicationId: 1, active: 1 },
+  { unique: true, partialFilterExpression: { active: true } },
+);
+seatAllotmentSchema.index({ roundId: 1, active: 1, publication: 1 });
 
 export const SeatAllotment = mongoose.model('SeatAllotment', seatAllotmentSchema);

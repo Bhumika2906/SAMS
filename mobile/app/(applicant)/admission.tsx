@@ -14,16 +14,18 @@ export default function ApplicantAdmissionScreen() {
   const [allotment, setAllotment] = useState<any>(null);
   const [application, setApplication] = useState<any>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const fetchAllotment = async () => {
     try {
+      setLoadError(null);
       const res = await apiClient.get('/allotments/me/current');
       if (res.data?.success) {
-        setAllotment(res.data.data.allotment);
+        setAllotment(res.data.data.currentAllotment ?? res.data.data.allotment);
         setApplication(res.data.data.application);
       }
-    } catch {
-      // Handled
+    } catch (err: any) {
+      setLoadError(err.message || 'Unable to load the current admission round.');
     } finally {
       setIsLoading(false);
     }
@@ -56,7 +58,7 @@ export default function ApplicantAdmissionScreen() {
     setIsSubmitting(true);
     setMessage(null);
     try {
-      const res = await apiClient.post('/allotments/me/respond', { response: decision });
+      const res = await apiClient.post(`/allotments/${allotment._id}/respond`, { response: decision });
       const msg = res.data?.data?.message || `Seat ${decision} successfully!`;
       setMessage(msg);
       await fetchAllotment();
@@ -80,6 +82,15 @@ export default function ApplicantAdmissionScreen() {
     return (
       <View style={styles.center}>
         <Text variant="bodyLarge">Loading allotment results...</Text>
+      </View>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <View style={styles.center}>
+        <Text variant="bodyLarge" style={styles.banner}>{loadError}</Text>
+        <Button mode="contained" onPress={fetchAllotment}>Retry</Button>
       </View>
     );
   }

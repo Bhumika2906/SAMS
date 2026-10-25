@@ -138,18 +138,20 @@ export async function seedDatabase(): Promise<void> {
 
   // 4. Create Admission Cycle
   const currentYear = new Date().getFullYear();
-  await AdmissionCycle.create({
+  const cycle = await AdmissionCycle.create({
     year: currentYear,
     name: `UG Admission ${currentYear}`,
     active: true,
     startDate: new Date(currentYear, 5, 1),
     endDate: new Date(currentYear, 8, 30),
   });
+  await Programme.updateMany({}, { $set: { cycleId: cycle._id } });
 
   // 5. Create Admission Round 1
   const round1 = await AdmissionRound.create({
     roundNumber: 1,
     name: 'Round 1 - Regular Allotment',
+    cycleId: cycle._id,
     status: RoundStatus.Published,
     startDate: new Date(),
     responseDeadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
@@ -257,6 +259,7 @@ export async function seedDatabase(): Promise<void> {
     roundId: round1._id,
     programmeId: cse._id,
     publication: SeatPublication.Published,
+    active: true,
     result: SeatResult.Allotted,
     response: SeatResponse.Pending,
     allottedRank: 75,
@@ -291,6 +294,7 @@ export async function seedDatabase(): Promise<void> {
     roundId: round1._id,
     programmeId: cce._id,
     publication: SeatPublication.Published,
+    active: true,
     result: SeatResult.Allotted,
     response: SeatResponse.Accepted,
     respondedAt: new Date(),
@@ -323,6 +327,7 @@ export async function seedDatabase(): Promise<void> {
     roundId: round1._id,
     programmeId: ece._id,
     publication: SeatPublication.Published,
+    active: true,
     result: SeatResult.Allotted,
     response: SeatResponse.Accepted,
     respondedAt: new Date(),
@@ -407,6 +412,7 @@ export async function seedDatabase(): Promise<void> {
     roundId: round1._id,
     programmeId: cse._id,
     publication: SeatPublication.Published,
+    active: true,
     result: SeatResult.Allotted,
     response: SeatResponse.Accepted,
     respondedAt: new Date(),
