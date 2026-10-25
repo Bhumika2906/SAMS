@@ -3,6 +3,7 @@ import {
   loginBodySchema,
   publicUserSchema,
   registerBodySchema,
+  resendOtpBodySchema,
   resetPasswordBodySchema,
   UserRole,
   verifyOtpBodySchema,
@@ -92,8 +93,8 @@ authRouter.post('/register', validate(registerBodySchema), async (req, res, next
       {
         message: 'Registration successful. Please verify your account with the OTP sent.',
         user: formatPublicUser(user),
-        // In development/test mode, expose OTP in response for testing convenience if needed, but console output is primary
-        ...(process.env.NODE_ENV === 'test' ? { devOtp: otp } : {}),
+        // In development/test mode, expose OTP in response for testing convenience
+        ...(process.env.NODE_ENV !== 'production' ? { devOtp: otp } : {}),
       },
       201,
     );
@@ -216,7 +217,7 @@ authRouter.post('/forgot-password', validate(forgotPasswordBodySchema), async (r
 
       sendSuccess(res, {
         message: 'Password reset code has been sent.',
-        ...(process.env.NODE_ENV === 'test' ? { devOtp: otp } : {}),
+        ...(process.env.NODE_ENV !== 'production' ? { devOtp: otp } : {}),
       });
       return;
     }
@@ -224,6 +225,42 @@ authRouter.post('/forgot-password', validate(forgotPasswordBodySchema), async (r
     // Always return success to prevent email enumeration
     sendSuccess(res, {
       message: 'Password reset code has been sent if the email is registered.',
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * POST /resend-otp
+ */
+authRouter.post('/resend-otp', validate(resendOtpBodySchema), async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) {
+      throw notFound('User not found');
+    }
+
+    if (user.verified) {
+      throw badRequest('Account is already verified. Please proceed to login.');
+    }
+
+    const config = loadConfig();
+    const otp = generateOtp();
+    user.otpHash = await bcrypt.hash(otp, 8);
+    user.otpExpiresAt = new Date(Date.now() + config.OTP_TTL_SECONDS * 1000);
+    user.otpPurpose = 'verify';
+    await user.save();
+
+    await NotificationService.sendSms(
+      email,
+      `Your SAMS verification code is ${otp}. Valid for 5 minutes.`,
+    );
+
+    sendSuccess(res, {
+      message: 'A new 6-digit verification code has been sent.',
+      ...(process.env.NODE_ENV !== 'production' ? { devOtp: otp } : {}),
     });
   } catch (err) {
     next(err);

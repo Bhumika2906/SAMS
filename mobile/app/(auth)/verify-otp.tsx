@@ -8,29 +8,35 @@ import { theme } from '../../src/theme/theme';
 export default function VerifyOtpScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ email?: string }>();
-  const { verifyOtp } = useAuth();
+  const { verifyOtp, resendOtp } = useAuth();
 
   const [email, setEmail] = useState(params.email || '');
   const [otp, setOtp] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isResending, setIsResending] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [infoMessage, setInfoMessage] = useState<string | null>(null);
 
   const handleVerify = async () => {
-    if (!email.trim() || !otp.trim()) {
-      setErrorMessage('Please enter both email and the 6-digit OTP code.');
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanOtp = otp.trim();
+
+    if (!cleanEmail || !cleanOtp) {
+      setErrorMessage('Please enter both your email and the 6-digit OTP code.');
       return;
     }
-    if (otp.trim().length !== 6) {
+    if (cleanOtp.length !== 6) {
       setErrorMessage('OTP must be exactly 6 digits.');
       return;
     }
 
     setErrorMessage(null);
+    setInfoMessage(null);
     setIsSubmitting(true);
     try {
       await verifyOtp({
-        email: email.trim().toLowerCase(),
-        otp: otp.trim(),
+        email: cleanEmail,
+        otp: cleanOtp,
       });
       // Redirect to applicant home upon verification
       router.replace('/(applicant)');
@@ -38,6 +44,26 @@ export default function VerifyOtpScreen() {
       setErrorMessage(err.message || 'OTP verification failed. Please try again.');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail) {
+      setErrorMessage('Please enter your email address to resend OTP.');
+      return;
+    }
+
+    setErrorMessage(null);
+    setInfoMessage(null);
+    setIsResending(true);
+    try {
+      await resendOtp(cleanEmail);
+      setInfoMessage('New 6-digit OTP generated! Check your server terminal.');
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Failed to resend OTP. Please try again.');
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -53,13 +79,19 @@ export default function VerifyOtpScreen() {
               Verify Your Account
             </Text>
             <Text variant="bodySmall" style={styles.subtitle}>
-              Enter the 6-digit verification code. (Simulated OTP is printed to the server console).
+              Enter the 6-digit verification code printed in your server terminal.
             </Text>
           </View>
 
           {errorMessage ? (
             <HelperText type="error" visible style={styles.errorBanner}>
               {errorMessage}
+            </HelperText>
+          ) : null}
+
+          {infoMessage ? (
+            <HelperText type="info" visible style={styles.infoBanner}>
+              {infoMessage}
             </HelperText>
           ) : null}
 
@@ -82,7 +114,8 @@ export default function VerifyOtpScreen() {
             label="6-Digit OTP Code"
             value={otp}
             onChangeText={(text) => {
-              setOtp(text);
+              const cleaned = text.replace(/[^0-9]/g, '').slice(0, 6);
+              setOtp(cleaned);
               if (errorMessage) setErrorMessage(null);
             }}
             keyboardType="number-pad"
@@ -91,7 +124,21 @@ export default function VerifyOtpScreen() {
             style={styles.input}
             outlineColor="#CBD5E1"
             activeOutlineColor={theme.colors.primary}
+            placeholder="e.g. 123456"
           />
+
+          <View style={styles.resendRow}>
+            <Button
+              mode="text"
+              loading={isResending}
+              disabled={isResending || isSubmitting}
+              onPress={handleResendOtp}
+              textColor={theme.colors.primary}
+              compact
+            >
+              Resend OTP Code
+            </Button>
+          </View>
 
           <Button
             mode="contained"
@@ -152,9 +199,20 @@ const styles = StyleSheet.create({
     padding: 8,
     marginBottom: 12,
   },
+  infoBanner: {
+    backgroundColor: '#E0F2FE',
+    color: '#0369A1',
+    borderRadius: 8,
+    padding: 8,
+    marginBottom: 12,
+  },
   input: {
     marginBottom: 16,
     backgroundColor: '#FFFFFF',
+  },
+  resendRow: {
+    alignItems: 'flex-start',
+    marginBottom: 12,
   },
   verifyButton: {
     marginTop: 8,

@@ -34,6 +34,11 @@ export const forgotPasswordBodySchema = z.object({
 });
 export type ForgotPasswordBody = z.infer<typeof forgotPasswordBodySchema>;
 
+export const resendOtpBodySchema = z.object({
+  email: emailSchema,
+});
+export type ResendOtpBody = z.infer<typeof resendOtpBodySchema>;
+
 export const resetPasswordBodySchema = z.object({
   email: emailSchema,
   otp: z.string().regex(/^\d{6}$/, 'OTP must be 6 digits'),

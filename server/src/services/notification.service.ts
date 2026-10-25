@@ -21,6 +21,16 @@ export class NotificationService {
    * Logs simulated SMS/OTP to server console.
    */
   static async sendSms(to: string, message: string): Promise<void> {
+    const match = message.match(/\b\d{6}\b/);
+    const code = match ? match[0] : '';
+    console.log('\n======================================================');
+    console.log(`[SIMULATED SMS] To: ${to}`);
+    console.log(`Message: ${message}`);
+    if (code) {
+      console.log(`>>> VERIFICATION OTP CODE: ${code} <<<`);
+    }
+    console.log('======================================================\n');
+
     logger.info(
       {
         channel: 'SMS (SIMULATED)',

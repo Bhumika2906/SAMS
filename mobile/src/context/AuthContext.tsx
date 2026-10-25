@@ -23,6 +23,7 @@ interface AuthContextType {
   login: (credentials: LoginBody) => Promise<PublicUser>;
   register: (data: RegisterBody) => Promise<{ devOtp?: string; message: string }>;
   verifyOtp: (data: VerifyOtpBody) => Promise<PublicUser>;
+  resendOtp: (email: string) => Promise<{ devOtp?: string; message: string }>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -105,6 +106,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return verifiedUser;
   };
 
+  const resendOtp = async (
+    email: string,
+  ): Promise<{ devOtp?: string; message: string }> => {
+    const res = await apiClient.post<{
+      success: boolean;
+      data: { message: string; devOtp?: string };
+    }>('/auth/resend-otp', { email });
+    return res.data.data;
+  };
+
   const logout = async (): Promise<void> => {
     await removeAuthToken();
     await removeStoredUser();
@@ -129,6 +140,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         login,
         register,
         verifyOtp,
+        resendOtp,
         logout,
         refreshUser,
       }}

@@ -56,7 +56,7 @@ export default function RegisterScreen() {
     setIsSubmitting(true);
     try {
       const cleanEmail = email.trim().toLowerCase();
-      await register({
+      const regRes = await register({
         fullName: fullName.trim(),
         email: cleanEmail,
         password,
