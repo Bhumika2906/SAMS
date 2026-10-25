@@ -84,6 +84,9 @@ export default function ApplicantAdmissionScreen() {
     );
   }
 
+  const isNotAllotted = allotment && allotment.result === 'NotAllotted';
+  const isSeatAllotted = allotment && allotment.result === 'Allotted';
+
   return (
     <ScrollView
       contentContainerStyle={styles.container}
@@ -94,7 +97,7 @@ export default function ApplicantAdmissionScreen() {
           Admission Rounds & Seat Status
         </Text>
         <Text variant="bodySmall" style={styles.subtitle}>
-          System-assisted merit allotment results. Respond before the window closes.
+          System-assisted merit allotment results.
         </Text>
       </Surface>
 
@@ -104,13 +107,66 @@ export default function ApplicantAdmissionScreen() {
         </Text>
       ) : null}
 
-      {allotment ? (
+      {isNotAllotted ? (
+        <Card style={styles.notAllottedCard} mode="elevated">
+          <Card.Content>
+            <View style={styles.cardHeaderRow}>
+              <View style={styles.cardHeaderLeft}>
+                <Text variant="titleMedium" style={styles.allotmentCardTitle}>
+                  {allotment.roundId?.name || 'Round 1 Allotment Result'}
+                </Text>
+                <Text variant="bodySmall" style={styles.meritText}>
+                  Merit Rank: {allotment.allottedRank || application?.meritRank || 'N/A'}
+                </Text>
+              </View>
+              <Chip
+                mode="flat"
+                style={styles.notAllottedChip}
+                textStyle={styles.notAllottedChipText}
+              >
+                Not Allotted
+              </Chip>
+            </View>
+
+            <Surface style={styles.notAllottedBox} elevation={0}>
+              <Text variant="titleMedium" style={styles.notAllottedTitle}>
+                No Seat Allotted in This Round
+              </Text>
+              <Text variant="bodyMedium" style={styles.notAllottedDesc}>
+                Based on your merit rank (#{allotment.allottedRank || application?.meritRank || 'N/A'}) and preferred branches, all available seats were allotted to candidates with higher ranks.
+              </Text>
+              <Text variant="bodySmall" style={styles.notAllottedSub}>
+                You do not need to accept or decline. Your application remains active and eligible for consideration in subsequent rounds if vacancies arise.
+              </Text>
+            </Surface>
+
+            {application?.preferences && application.preferences.length > 0 ? (
+              <View style={styles.prefSection}>
+                <Divider style={styles.divider} />
+                <Text variant="labelMedium" style={styles.prefSectionTitle}>
+                  YOUR SUBMITTED PREFERENCES:
+                </Text>
+                {application.preferences.map((pref: any) => (
+                  <View key={pref.programmeId?._id || pref.preferenceOrder} style={styles.prefRow}>
+                    <Text variant="bodyMedium" style={styles.prefOrderText}>
+                      Choice #{pref.preferenceOrder}:
+                    </Text>
+                    <Text variant="bodyMedium" style={styles.prefProgText}>
+                      {pref.programmeId?.name || 'Programme'} ({pref.programmeId?.code || 'N/A'})
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            ) : null}
+          </Card.Content>
+        </Card>
+      ) : isSeatAllotted ? (
         <Card style={styles.allotmentCard} mode="elevated">
           <Card.Content>
             <View style={styles.cardHeaderRow}>
               <View style={styles.cardHeaderLeft}>
                 <Text variant="titleMedium" style={styles.allotmentCardTitle}>
-                  Round 1 Allotment Result
+                  {allotment.roundId?.name || 'Round 1 Allotment Result'}
                 </Text>
                 <Text variant="bodySmall" style={styles.meritText}>
                   Merit Rank: {allotment.allottedRank || application?.meritRank || 'N/A'}
@@ -127,6 +183,7 @@ export default function ApplicantAdmissionScreen() {
                 {allotment.response === 'Accepted' ? 'Seat Confirmed' : allotment.result}
               </Chip>
             </View>
+
             <View style={styles.progBox}>
               <Text variant="labelMedium" style={styles.progLabel}>
                 ALLOTTED PROGRAMME
@@ -240,6 +297,13 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 16,
   },
+  notAllottedCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    marginBottom: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: '#64748B',
+  },
   cardHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -269,9 +333,65 @@ const styles = StyleSheet.create({
   acceptedChip: {
     backgroundColor: '#ECFDF5',
   },
+  notAllottedChip: {
+    backgroundColor: '#F1F5F9',
+    alignSelf: 'flex-start',
+  },
+  notAllottedChipText: {
+    color: '#475569',
+    fontWeight: '700',
+    fontSize: 12,
+  },
   statusChipText: {
     fontWeight: '700',
     fontSize: 12,
+  },
+  notAllottedBox: {
+    backgroundColor: '#F8FAFC',
+    borderColor: '#E2E8F0',
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 16,
+    marginTop: 12,
+  },
+  notAllottedTitle: {
+    color: '#334155',
+    fontWeight: '700',
+    marginBottom: 6,
+  },
+  notAllottedDesc: {
+    color: '#475569',
+    lineHeight: 22,
+    marginBottom: 8,
+  },
+  notAllottedSub: {
+    color: '#64748B',
+    fontStyle: 'italic',
+    lineHeight: 18,
+  },
+  prefSection: {
+    marginTop: 16,
+  },
+  prefSectionTitle: {
+    color: '#64748B',
+    fontSize: 11,
+    letterSpacing: 1,
+    marginBottom: 8,
+  },
+  prefRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 4,
+  },
+  prefOrderText: {
+    color: '#0F2C59',
+    fontWeight: '600',
+    fontSize: 13,
+  },
+  prefProgText: {
+    color: '#334155',
+    fontSize: 13,
   },
   progBox: {
     backgroundColor: '#F1F5F9',

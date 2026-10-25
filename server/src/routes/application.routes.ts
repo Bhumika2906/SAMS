@@ -2,6 +2,8 @@ import {
   AdmissionStage,
   ApplicationStatus,
   DocumentStatus,
+  SeatPublication,
+  SeatResult,
   UserRole,
 } from '@sams/shared';
 import { Router } from 'express';
@@ -10,7 +12,7 @@ import multer from 'multer';
 import path from 'path';
 import { badRequest, conflict, notFound, sendSuccess } from '../errors';
 import { authenticate, requireRoles } from '../middleware/auth';
-import { Application, DocumentModel, Programme } from '../models';
+import { Application, DocumentModel, Programme, SeatAllotment } from '../models';
 
 export const applicationRouter = Router();
 
@@ -184,11 +186,26 @@ applicationRouter.get('/me/tracker', async (req, res, next) => {
     const application = await Application.findOne({ userId });
     if (!application) throw notFound('Application not found');
 
+    // Check if there is a published allotment for this application
+    const latestAllotment = await SeatAllotment.findOne({
+      applicationId: application._id,
+      publication: SeatPublication.Published,
+    }).sort({ createdAt: -1 });
+
+    let effectiveStage = application.admissionStage;
+    if (latestAllotment && latestAllotment.result === SeatResult.NotAllotted) {
+      effectiveStage = AdmissionStage.NotAllotted;
+      if (application.admissionStage !== AdmissionStage.NotAllotted) {
+        application.admissionStage = AdmissionStage.NotAllotted;
+        await application.save();
+      }
+    }
+
     const stageOrder = [
       { key: AdmissionStage.Registered, label: 'Account Registered' },
       { key: AdmissionStage.ApplicationInProgress, label: 'Application Form' },
       { key: AdmissionStage.Submitted, label: 'Application Submitted' },
-      { key: AdmissionStage.InRound, label: 'Round Allotment' },
+      { key: effectiveStage === AdmissionStage.NotAllotted ? AdmissionStage.NotAllotted : AdmissionStage.InRound, label: effectiveStage === AdmissionStage.NotAllotted ? 'No Seat Allotted' : 'Round Allotment' },
       { key: AdmissionStage.SeatConfirmed, label: 'Seat Confirmed' },
       { key: AdmissionStage.PaymentCompleted, label: 'Admission Fee Paid' },
       { key: AdmissionStage.VerificationPending, label: 'Campus Verification' },
@@ -196,20 +213,22 @@ applicationRouter.get('/me/tracker', async (req, res, next) => {
     ];
 
     let nextAction = 'Fill and submit application form';
-    if (application.admissionStage === AdmissionStage.Submitted) {
+    if (effectiveStage === AdmissionStage.Submitted) {
       nextAction = 'Wait for Round 1 seat allotment publication';
-    } else if (application.admissionStage === AdmissionStage.InRound) {
+    } else if (effectiveStage === AdmissionStage.InRound) {
       nextAction = 'Review allotment and tap Accept or Decline';
-    } else if (application.admissionStage === AdmissionStage.SeatConfirmed) {
+    } else if (effectiveStage === AdmissionStage.NotAllotted) {
+      nextAction = 'No seat allotted in this round based on merit rank. Awaiting subsequent rounds.';
+    } else if (effectiveStage === AdmissionStage.SeatConfirmed) {
       nextAction = 'Pay the admission fee to confirm enrollment';
-    } else if (application.admissionStage === AdmissionStage.PaymentCompleted || application.admissionStage === AdmissionStage.VerificationPending) {
+    } else if (effectiveStage === AdmissionStage.PaymentCompleted || effectiveStage === AdmissionStage.VerificationPending) {
       nextAction = 'Visit campus with QR gate pass for physical document verification';
-    } else if (application.admissionStage === AdmissionStage.AdmissionConfirmed) {
+    } else if (effectiveStage === AdmissionStage.AdmissionConfirmed) {
       nextAction = 'Admission complete! Welcome to LNMIIT Jaipur.';
     }
 
     sendSuccess(res, {
-      currentStage: application.admissionStage,
+      currentStage: effectiveStage,
       nextAction,
       stages: stageOrder,
     });

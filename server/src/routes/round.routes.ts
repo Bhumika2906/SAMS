@@ -184,7 +184,10 @@ roundRouter.post(
 
       for (const alt of publishedAllotments) {
         await Application.findByIdAndUpdate(alt.applicationId, {
-          admissionStage: AdmissionStage.InRound,
+          admissionStage:
+            alt.result === SeatResult.Allotted
+              ? AdmissionStage.InRound
+              : AdmissionStage.NotAllotted,
         });
       }
 
@@ -234,7 +237,7 @@ roundRouter.get(
   async (req, res, next) => {
     try {
       const userId = req.user!.id;
-      const app = await Application.findOne({ userId });
+      const app = await Application.findOne({ userId }).populate('preferences.programmeId');
       if (!app) throw notFound('Application not found');
 
       const allotment = await SeatAllotment.findOne({
@@ -276,8 +279,8 @@ roundRouter.post(
         response: SeatResponse.Pending,
       });
 
-      if (!allotment) {
-        throw notFound('No pending published seat allotment found to respond to');
+      if (!allotment || allotment.result !== SeatResult.Allotted) {
+        throw badRequest('No active seat allotment offer available to accept or decline.');
       }
 
       allotment.response = decision;

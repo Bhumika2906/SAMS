@@ -120,6 +120,28 @@ export default function ApplicantHomeScreen() {
         </Card>
       ) : null}
 
+      {currentStage === 'NotAllotted' ? (
+        <Card style={styles.notAllottedCard} mode="elevated">
+          <Card.Content>
+            <Text variant="titleMedium" style={styles.notAllottedTitle}>
+              Round Result: No Seat Allotted
+            </Text>
+            <Text variant="bodySmall" style={styles.notAllottedDesc}>
+              No seat could be allotted based on your merit rank in this round. You remain eligible for subsequent rounds if vacancies arise.
+            </Text>
+          </Card.Content>
+          <Card.Actions>
+            <Button
+              mode="outlined"
+              textColor="#0F2C59"
+              onPress={() => router.push('/(applicant)/admission')}
+            >
+              View Round Status
+            </Button>
+          </Card.Actions>
+        </Card>
+      ) : null}
+
       {currentStage === 'SeatConfirmed' ? (
         <Card style={styles.highlightCard} mode="elevated">
           <Card.Content>
@@ -264,6 +286,22 @@ const styles = StyleSheet.create({
   highlightDesc: {
     color: '#64748B',
     marginTop: 4,
+  },
+  notAllottedCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    marginBottom: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: '#64748B',
+  },
+  notAllottedTitle: {
+    color: '#334155',
+    fontWeight: '700',
+  },
+  notAllottedDesc: {
+    color: '#64748B',
+    marginTop: 4,
+    lineHeight: 20,
   },
   congratsCard: {
     backgroundColor: '#ECFDF5',
