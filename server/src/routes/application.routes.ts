@@ -3,6 +3,7 @@ import {
   ApplicationStatus,
   DocumentStatus,
   SeatPublication,
+  SeatResponse,
   SeatResult,
   UserRole,
 } from '@sams/shared';
@@ -13,6 +14,7 @@ import path from 'path';
 import { badRequest, conflict, notFound, sendSuccess } from '../errors';
 import { authenticate, requireRoles } from '../middleware/auth';
 import { Application, DocumentModel, Programme, SeatAllotment } from '../models';
+import { AllotmentService } from '../services/allotment.service';
 
 export const applicationRouter = Router();
 
@@ -81,8 +83,68 @@ applicationRouter.put('/me', async (req, res, next) => {
     if (personal) application.personal = { ...application.personal, ...personal };
     if (address) application.address = { ...application.address, ...address };
     if (education) application.education = { ...application.education, ...education };
-    if (preferences) application.preferences = preferences;
     if (category) application.category = category;
+
+    if (preferences !== undefined) {
+      if (!Array.isArray(preferences)) {
+        throw badRequest('Preferences must be an array');
+      }
+      if (preferences.length > 0) {
+        // Validate preferences uniqueness, sequential order, and existing programmes
+        const seenProgrammes = new Set<string>();
+        const orders = new Set<number>();
+        for (const pref of preferences) {
+          if (!pref.programmeId || pref.preferenceOrder === undefined) {
+            throw badRequest('Each preference must include programmeId and preferenceOrder');
+          }
+          const progIdStr = String(pref.programmeId);
+          if (seenProgrammes.has(progIdStr)) {
+            throw badRequest(`Duplicate programme in preferences: ${progIdStr}`);
+          }
+          seenProgrammes.add(progIdStr);
+
+          const order = Number(pref.preferenceOrder);
+          if (!Number.isInteger(order) || order < 1) {
+            throw badRequest('preferenceOrder must be a positive integer');
+          }
+          if (orders.has(order)) {
+            throw badRequest(`Duplicate preferenceOrder: ${order}`);
+          }
+          orders.add(order);
+        }
+
+        const sortedOrders = Array.from(orders).sort((a, b) => a - b);
+        for (let i = 0; i < sortedOrders.length; i++) {
+          if (sortedOrders[i] !== i + 1) {
+            throw badRequest(
+              'preferenceOrder values must be unique and sequential starting from 1 (e.g. 1, 2, 3...)',
+            );
+          }
+        }
+
+        const progIds = Array.from(seenProgrammes);
+        const existingProgs = await Programme.find({ _id: { $in: progIds } });
+        if (existingProgs.length !== progIds.length) {
+          throw badRequest('One or more selected programmes do not exist');
+        }
+
+        const currentRound = await AllotmentService.getCurrentRound();
+        if (currentRound && currentRound.seatMatrix && currentRound.seatMatrix.length > 0) {
+          const validCycleProgIds = new Set(
+            currentRound.seatMatrix.map((m: any) => {
+              const pid = m.programmeId?._id || m.programmeId;
+              return pid ? pid.toString() : '';
+            }),
+          );
+          for (const progIdStr of progIds) {
+            if (!validCycleProgIds.has(progIdStr)) {
+              throw badRequest(`Programme ${progIdStr} is not part of the current admission cycle`);
+            }
+          }
+        }
+      }
+      application.preferences = preferences as any;
+    }
 
     application.admissionStage = AdmissionStage.ApplicationInProgress;
     await application.save();
@@ -186,18 +248,29 @@ applicationRouter.get('/me/tracker', async (req, res, next) => {
     const application = await Application.findOne({ userId });
     if (!application) throw notFound('Application not found');
 
-    // Check if there is a published allotment for this application
-    const latestAllotment = await SeatAllotment.findOne({
-      applicationId: application._id,
-      publication: SeatPublication.Published,
-    }).sort({ createdAt: -1 });
+    const currentRound = await AllotmentService.getCurrentRound();
+    const currentAllotment = await AllotmentService.getCurrentAllotmentForApplication(
+      application._id.toString(),
+      currentRound?._id?.toString(),
+    );
 
     let effectiveStage = application.admissionStage;
-    if (latestAllotment && latestAllotment.result === SeatResult.NotAllotted) {
-      effectiveStage = AdmissionStage.NotAllotted;
-      if (application.admissionStage !== AdmissionStage.NotAllotted) {
-        application.admissionStage = AdmissionStage.NotAllotted;
-        await application.save();
+    if (currentAllotment) {
+      if (currentAllotment.result === SeatResult.NotAllotted) {
+        effectiveStage = AdmissionStage.NotAllotted;
+        if (
+          application.admissionStage !== AdmissionStage.NotAllotted &&
+          application.admissionStage === AdmissionStage.InRound
+        ) {
+          application.admissionStage = AdmissionStage.NotAllotted;
+          await application.save();
+        }
+      } else if (currentAllotment.result === SeatResult.Allotted) {
+        if (currentAllotment.response === SeatResponse.Accepted) {
+          effectiveStage = application.admissionStage;
+        } else {
+          effectiveStage = AdmissionStage.InRound;
+        }
       }
     }
 
@@ -205,7 +278,16 @@ applicationRouter.get('/me/tracker', async (req, res, next) => {
       { key: AdmissionStage.Registered, label: 'Account Registered' },
       { key: AdmissionStage.ApplicationInProgress, label: 'Application Form' },
       { key: AdmissionStage.Submitted, label: 'Application Submitted' },
-      { key: effectiveStage === AdmissionStage.NotAllotted ? AdmissionStage.NotAllotted : AdmissionStage.InRound, label: effectiveStage === AdmissionStage.NotAllotted ? 'No Seat Allotted' : 'Round Allotment' },
+      {
+        key:
+          effectiveStage === AdmissionStage.NotAllotted
+            ? AdmissionStage.NotAllotted
+            : AdmissionStage.InRound,
+        label:
+          effectiveStage === AdmissionStage.NotAllotted
+            ? 'No Seat Allotted'
+            : 'Round Allotment',
+      },
       { key: AdmissionStage.SeatConfirmed, label: 'Seat Confirmed' },
       { key: AdmissionStage.PaymentCompleted, label: 'Admission Fee Paid' },
       { key: AdmissionStage.VerificationPending, label: 'Campus Verification' },
@@ -221,7 +303,10 @@ applicationRouter.get('/me/tracker', async (req, res, next) => {
       nextAction = 'No seat allotted in this round based on merit rank. Awaiting subsequent rounds.';
     } else if (effectiveStage === AdmissionStage.SeatConfirmed) {
       nextAction = 'Pay the admission fee to confirm enrollment';
-    } else if (effectiveStage === AdmissionStage.PaymentCompleted || effectiveStage === AdmissionStage.VerificationPending) {
+    } else if (
+      effectiveStage === AdmissionStage.PaymentCompleted ||
+      effectiveStage === AdmissionStage.VerificationPending
+    ) {
       nextAction = 'Visit campus with QR gate pass for physical document verification';
     } else if (effectiveStage === AdmissionStage.AdmissionConfirmed) {
       nextAction = 'Admission complete! Welcome to LNMIIT Jaipur.';
@@ -231,6 +316,19 @@ applicationRouter.get('/me/tracker', async (req, res, next) => {
       currentStage: effectiveStage,
       nextAction,
       stages: stageOrder,
+      currentRound: currentRound
+        ? {
+            _id: currentRound._id,
+            roundNumber: currentRound.roundNumber,
+            name: currentRound.name,
+            status: currentRound.status,
+            version: currentRound.version,
+          }
+        : null,
+      currentAllotment,
+      application,
+      roundVersion: currentRound?.version,
+      lastUpdatedAt: currentRound?.updatedAt || application.updatedAt,
     });
   } catch (err) {
     next(err);

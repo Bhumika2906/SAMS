@@ -6,7 +6,7 @@
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
-    "test": "jest --runInBand",
+    "test": "node --experimental-vm-modules ../node_modules/jest/bin/jest.js --runInBand",
     "db": "tsx src/dev-db.ts",
     "seed": "tsx src/seed.ts",
     "lint": "eslint src"

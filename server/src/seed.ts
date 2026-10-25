@@ -150,13 +150,13 @@ export async function seedDatabase(): Promise<void> {
   const round1 = await AdmissionRound.create({
     roundNumber: 1,
     name: 'Round 1 - Regular Allotment',
-    status: RoundStatus.Published,
+    status: RoundStatus.Open,
     startDate: new Date(),
     responseDeadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     seatMatrix: [
-      { programmeId: cse._id, capacity: 3, allotted: 1, confirmed: 0 },
-      { programmeId: cce._id, capacity: 2, allotted: 1, confirmed: 1 },
-      { programmeId: ece._id, capacity: 2, allotted: 0, confirmed: 0 },
+      { programmeId: cse._id, capacity: 3, allotted: 0, confirmed: 0, offered: 0, accepted: 0, available: 3 },
+      { programmeId: cce._id, capacity: 2, allotted: 0, confirmed: 0, offered: 0, accepted: 0, available: 2 },
+      { programmeId: ece._id, capacity: 2, allotted: 0, confirmed: 0, offered: 0, accepted: 0, available: 2 },
     ],
   });
 
@@ -228,7 +228,7 @@ export async function seedDatabase(): Promise<void> {
   app3User.applicationId = app3._id as any;
   await app3User.save();
 
-  // Applicant 4: InRound stage with published allotment (CSE), Pending response
+  // Applicant 4: Submitted & Eligible stage (CSE #1, CCE #2)
   const app4User = await User.create({
     email: 'applicant4@sams.test',
     passwordHash,
@@ -238,8 +238,8 @@ export async function seedDatabase(): Promise<void> {
   });
   const app4 = await Application.create({
     userId: app4User._id,
-    status: ApplicationStatus.Eligible,
-    admissionStage: AdmissionStage.InRound,
+    status: ApplicationStatus.Submitted,
+    admissionStage: AdmissionStage.Submitted,
     locked: true,
     meritRank: 75,
     submittedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
@@ -252,17 +252,7 @@ export async function seedDatabase(): Promise<void> {
   app4User.applicationId = app4._id as any;
   await app4User.save();
 
-  await SeatAllotment.create({
-    applicationId: app4._id,
-    roundId: round1._id,
-    programmeId: cse._id,
-    publication: SeatPublication.Published,
-    result: SeatResult.Allotted,
-    response: SeatResponse.Pending,
-    allottedRank: 75,
-  });
-
-  // Applicant 5: Seat confirmed (CCE), awaiting payment
+  // Applicant 5: Submitted & Eligible stage (CCE #1, CSE #2)
   const app5User = await User.create({
     email: 'applicant5@sams.test',
     passwordHash,
@@ -272,8 +262,8 @@ export async function seedDatabase(): Promise<void> {
   });
   const app5 = await Application.create({
     userId: app5User._id,
-    status: ApplicationStatus.Eligible,
-    admissionStage: AdmissionStage.SeatConfirmed,
+    status: ApplicationStatus.Submitted,
+    admissionStage: AdmissionStage.Submitted,
     locked: true,
     meritRank: 92,
     submittedAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000),
@@ -286,18 +276,7 @@ export async function seedDatabase(): Promise<void> {
   app5User.applicationId = app5._id as any;
   await app5User.save();
 
-  await SeatAllotment.create({
-    applicationId: app5._id,
-    roundId: round1._id,
-    programmeId: cce._id,
-    publication: SeatPublication.Published,
-    result: SeatResult.Allotted,
-    response: SeatResponse.Accepted,
-    respondedAt: new Date(),
-    allottedRank: 92,
-  });
-
-  // Applicant 6: Payment completed, QR gate pass & digital checklist generated (ready for Counter 1 verification)
+  // Applicant 6: Submitted & Eligible stage (ECE #1)
   const app6User = await User.create({
     email: 'applicant6@sams.test',
     passwordHash,
@@ -307,8 +286,8 @@ export async function seedDatabase(): Promise<void> {
   });
   const app6 = await Application.create({
     userId: app6User._id,
-    status: ApplicationStatus.Eligible,
-    admissionStage: AdmissionStage.VerificationPending,
+    status: ApplicationStatus.Submitted,
+    admissionStage: AdmissionStage.Submitted,
     locked: true,
     meritRank: 110,
     submittedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
@@ -318,70 +297,7 @@ export async function seedDatabase(): Promise<void> {
   app6User.applicationId = app6._id as any;
   await app6User.save();
 
-  await SeatAllotment.create({
-    applicationId: app6._id,
-    roundId: round1._id,
-    programmeId: ece._id,
-    publication: SeatPublication.Published,
-    result: SeatResult.Allotted,
-    response: SeatResponse.Accepted,
-    respondedAt: new Date(),
-    allottedRank: 110,
-  });
-
-  await Payment.create({
-    applicationId: app6._id,
-    amount: ece.fee,
-    status: PaymentStatus.Success,
-    idempotencyKey: 'seed_payment_app6',
-    receiptNumber: 'REC-2026-006',
-    simulated: true,
-    paidAt: new Date(),
-  });
-
-  const rawToken6 = 'sams_gate_pass_token_app6_secure_128bit';
-  const tokenHash6 = crypto.createHash('sha256').update(rawToken6).digest('hex');
-
-  await QRGatePass.create({
-    applicationId: app6._id,
-    tokenHash: tokenHash6,
-    rawToken: 'DEMO-PASS-101',
-    passCode: 'DEMO-PASS-101',
-    purpose: 'Campus Document Verification',
-    date: '2026-11-01',
-    timeSlot: '10:00 AM - 11:30 AM',
-    counterId: counter1._id,
-    validity: GatePassValidity.Valid,
-  });
-
-  await DigitalChecklist.create({
-    applicationId: app6._id,
-    status: ChecklistStatus.Pending,
-    items: [
-      {
-        name: 'Class 10 Original Certificate & Marksheet',
-        mandatory: true,
-        status: ChecklistItemStatus.Pending,
-      },
-      {
-        name: 'Class 12 Original Certificate & Marksheet',
-        mandatory: true,
-        status: ChecklistItemStatus.Pending,
-      },
-      {
-        name: 'JEE Main Score Card (Original)',
-        mandatory: true,
-        status: ChecklistItemStatus.Pending,
-      },
-      {
-        name: 'Government Photo ID Proof (Aadhaar / Passport)',
-        mandatory: true,
-        status: ChecklistItemStatus.Pending,
-      },
-    ],
-  });
-
-  // Applicant 7: Fully verified & Admission Confirmed
+  // Applicant 7: Submitted & Eligible stage (CSE #1)
   const app7User = await User.create({
     email: 'applicant7@sams.test',
     passwordHash,
@@ -391,8 +307,8 @@ export async function seedDatabase(): Promise<void> {
   });
   const app7 = await Application.create({
     userId: app7User._id,
-    status: ApplicationStatus.Eligible,
-    admissionStage: AdmissionStage.AdmissionConfirmed,
+    status: ApplicationStatus.Submitted,
+    admissionStage: AdmissionStage.Submitted,
     locked: true,
     meritRank: 140,
     submittedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
@@ -401,55 +317,6 @@ export async function seedDatabase(): Promise<void> {
   });
   app7User.applicationId = app7._id as any;
   await app7User.save();
-
-  await SeatAllotment.create({
-    applicationId: app7._id,
-    roundId: round1._id,
-    programmeId: cse._id,
-    publication: SeatPublication.Published,
-    result: SeatResult.Allotted,
-    response: SeatResponse.Accepted,
-    respondedAt: new Date(),
-    allottedRank: 140,
-  });
-
-  await Payment.create({
-    applicationId: app7._id,
-    amount: cse.fee,
-    status: PaymentStatus.Success,
-    idempotencyKey: 'seed_payment_app7',
-    receiptNumber: 'REC-2026-007',
-    simulated: true,
-    paidAt: new Date(),
-  });
-
-  await DigitalChecklist.create({
-    applicationId: app7._id,
-    status: ChecklistStatus.FullyVerified,
-    items: [
-      {
-        name: 'Class 10 Original Certificate & Marksheet',
-        mandatory: true,
-        status: ChecklistItemStatus.Verified,
-        verifiedBy: faculty1._id as any,
-        verifiedAt: new Date(),
-      },
-      {
-        name: 'Class 12 Original Certificate & Marksheet',
-        mandatory: true,
-        status: ChecklistItemStatus.Verified,
-        verifiedBy: faculty1._id as any,
-        verifiedAt: new Date(),
-      },
-      {
-        name: 'JEE Main Score Card (Original)',
-        mandatory: true,
-        status: ChecklistItemStatus.Verified,
-        verifiedBy: faculty1._id as any,
-        verifiedAt: new Date(),
-      },
-    ],
-  });
 
   // Applicant 8: Unverified account (to test registration/OTP flow)
   const app8Otp = '123456';

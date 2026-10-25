@@ -39,26 +39,40 @@ export default function AdminRoundsScreen() {
   const handleCreateRound = async () => {
     setIsCreating(true);
     try {
-      // Fetch programmes first to get their ObjectIds
+      // Fetch programmes first to get their ObjectIds and base capacities
       const appRes = await apiClient.get('/management/overview');
       const progs = appRes.data?.data?.programmes || [];
 
-      const matrix = progs.map((p: any) => ({
-        programmeId: p._id,
-        capacity: p.code === 'CSE' ? 2 : 1, // Limited seats for demo competition
-        allotted: 0,
-        confirmed: 0,
-      }));
+      // Calculate remaining vacant seats from prior round (capacity - allotted)
+      const matrix = progs.map((p: any) => {
+        const priorMatrixItem = rounds[0]?.seatMatrix?.find((sm: any) => {
+          const progId = (sm.programmeId?._id || sm.programmeId)?.toString();
+          return progId === p._id?.toString();
+        });
+        const capacity = priorMatrixItem
+          ? Math.max(0, (Number(priorMatrixItem.capacity) || 0) - (Number(priorMatrixItem.allotted) || 0))
+          : (p.baseCapacity ?? 3);
+        return {
+          programmeId: p._id,
+          capacity,
+          allotted: 0,
+          confirmed: 0,
+        };
+      });
 
       const res = await apiClient.post('/rounds', {
         name: `Round ${rounds.length + 1} - Regular Allotment`,
         seatMatrix: matrix,
       });
 
-      Alert.alert('Round Created', res.data.data.message || 'Admission round initialized successfully.');
+      const msg = res.data?.data?.message || 'Admission round initialized successfully.';
+      if (typeof window !== 'undefined' && window.alert) window.alert(`Success: ${msg}`);
+      else Alert.alert('Round Created', msg);
       await fetchRounds();
     } catch (err: any) {
-      Alert.alert('Error', err.message || 'Failed to create round');
+      const msg = err.message || 'Failed to create round';
+      if (typeof window !== 'undefined' && window.alert) window.alert(`Error: ${msg}`);
+      else Alert.alert('Error', msg);
     } finally {
       setIsCreating(false);
     }

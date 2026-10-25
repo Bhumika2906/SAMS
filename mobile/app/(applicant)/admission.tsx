@@ -14,16 +14,18 @@ export default function ApplicantAdmissionScreen() {
   const [allotment, setAllotment] = useState<any>(null);
   const [application, setApplication] = useState<any>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   const fetchAllotment = async () => {
     try {
+      setFetchError(null);
       const res = await apiClient.get('/allotments/me/current');
       if (res.data?.success) {
-        setAllotment(res.data.data.allotment);
+        setAllotment(res.data.data.allotment || res.data.data.currentAllotment);
         setApplication(res.data.data.application);
       }
-    } catch {
-      // Handled
+    } catch (err: any) {
+      setFetchError(err.message || 'Unable to load admission allotment. Please check your connection.');
     } finally {
       setIsLoading(false);
     }
@@ -41,14 +43,21 @@ export default function ApplicantAdmissionScreen() {
     setRefreshing(false);
   };
 
-  const handleRespond = async (decision: 'Accepted' | 'Declined') => {
+  const handleRespond = async (decision: 'Accepted' | 'Declined' | 'OptedNextRound') => {
+    if (!allotment?._id) return;
+
+    let confirmPrompt = 'Confirm your response?';
+    if (decision === 'Accepted') {
+      confirmPrompt = 'Accept this seat offer? You will be directed to pay the admission fee and unlock your campus QR pass.';
+    } else if (decision === 'OptedNextRound') {
+      confirmPrompt = 'Opt for subsequent rounds (Float)? You decline this specific allotment but remain eligible for higher preferences in future rounds.';
+    } else if (decision === 'Declined') {
+      confirmPrompt = 'Permanently decline this offer and withdraw from further rounds?';
+    }
+
     const confirmed =
       typeof window !== 'undefined' && window.confirm
-        ? window.confirm(
-            decision === 'Accepted'
-              ? 'Accept this seat offer? You will be directed to pay the admission fee and unlock your campus QR pass.'
-              : 'Are you sure you want to decline this seat offer?',
-          )
+        ? window.confirm(confirmPrompt)
         : true;
 
     if (!confirmed) return;
@@ -56,7 +65,7 @@ export default function ApplicantAdmissionScreen() {
     setIsSubmitting(true);
     setMessage(null);
     try {
-      const res = await apiClient.post('/allotments/me/respond', { response: decision });
+      const res = await apiClient.post(`/allotments/${allotment._id}/respond`, { response: decision });
       const msg = res.data?.data?.message || `Seat ${decision} successfully!`;
       setMessage(msg);
       await fetchAllotment();
@@ -100,6 +109,23 @@ export default function ApplicantAdmissionScreen() {
           System-assisted merit allotment results.
         </Text>
       </Surface>
+
+      {fetchError ? (
+        <Surface style={styles.errorBannerBox} elevation={1}>
+          <Text variant="bodyMedium" style={styles.errorBannerText}>
+            {fetchError}
+          </Text>
+          <Button
+            mode="contained"
+            buttonColor="#DC2626"
+            onPress={fetchAllotment}
+            compact
+            style={styles.retryBtn}
+          >
+            Retry
+          </Button>
+        </Surface>
+      ) : null}
 
       {message ? (
         <Text variant="bodyMedium" style={styles.banner}>
@@ -221,13 +247,23 @@ export default function ApplicantAdmissionScreen() {
                 </Button>
                 <Button
                   mode="outlined"
+                  textColor="#2563EB"
+                  onPress={() => handleRespond('OptedNextRound')}
+                  loading={isSubmitting}
+                  disabled={isSubmitting}
+                  style={[styles.actionBtn, styles.floatBtn]}
+                >
+                  Float / Next Round
+                </Button>
+                <Button
+                  mode="outlined"
                   textColor="#DC2626"
                   onPress={() => handleRespond('Declined')}
                   loading={isSubmitting}
                   disabled={isSubmitting}
                   style={[styles.actionBtn, styles.declineBtn]}
                 >
-                  Decline
+                  Withdraw
                 </Button>
               </View>
             ) : null}
@@ -446,6 +482,28 @@ const styles = StyleSheet.create({
   },
   declineBtn: {
     borderColor: '#DC2626',
+  },
+  floatBtn: {
+    borderColor: '#2563EB',
+  },
+  errorBannerBox: {
+    backgroundColor: '#FEF2F2',
+    borderColor: '#F87171',
+    borderWidth: 1,
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  errorBannerText: {
+    color: '#991B1B',
+    flex: 1,
+  },
+  retryBtn: {
+    borderRadius: 6,
   },
   payBtn: {
     marginTop: 20,

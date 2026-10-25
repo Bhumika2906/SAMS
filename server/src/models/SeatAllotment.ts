@@ -23,12 +23,20 @@ const seatAllotmentSchema = new Schema(
     },
     respondedAt: { type: Date, default: null },
     allottedRank: { type: Number, default: null },
+    isActive: { type: Boolean, default: true },
+    allocationRunId: { type: String, default: null },
+    revision: { type: Number, default: 1 },
+    publishedAt: { type: Date, default: null },
+    publishedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
+    supersededAt: { type: Date, default: null },
+    supersededBy: { type: Schema.Types.ObjectId, ref: 'SeatAllotment', default: null },
   },
   { timestamps: true },
 );
 
-seatAllotmentSchema.index({ applicationId: 1, roundId: 1 }, { unique: true });
-seatAllotmentSchema.index({ roundId: 1, result: 1 });
+seatAllotmentSchema.index({ applicationId: 1, roundId: 1, revision: 1 });
+seatAllotmentSchema.index({ applicationId: 1, isActive: 1 });
+seatAllotmentSchema.index({ roundId: 1, result: 1, isActive: 1 });
 seatAllotmentSchema.index({ roundId: 1, publication: 1 });
 
 export const SeatAllotment = mongoose.model('SeatAllotment', seatAllotmentSchema);

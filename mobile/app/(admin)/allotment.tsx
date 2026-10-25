@@ -13,9 +13,11 @@ export default function AdminAllotmentScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   const loadData = async () => {
     try {
+      setFetchError(null);
       const res = await apiClient.get('/rounds');
       if (res.data?.success && res.data.data.rounds?.length > 0) {
         const rList = res.data.data.rounds;
@@ -29,8 +31,8 @@ export default function AdminAllotmentScreen() {
           setAllotments(altRes.data.data.allotments || []);
         }
       }
-    } catch {
-      // Handled
+    } catch (err: any) {
+      setFetchError(err.message || 'Failed to load rounds data');
     } finally {
       setIsLoading(false);
     }
@@ -105,6 +107,23 @@ export default function AdminAllotmentScreen() {
           Deterministic rank-based allocation algorithm honoring branch preferences and capacities.
         </Text>
       </Surface>
+
+      {fetchError ? (
+        <Surface style={styles.errorBox} elevation={2}>
+          <Text variant="bodyMedium" style={styles.errorText}>
+            ⚠️ {fetchError}
+          </Text>
+          <Button
+            mode="contained"
+            buttonColor="#DC2626"
+            onPress={loadData}
+            compact
+            style={styles.retryBtn}
+          >
+            Retry
+          </Button>
+        </Surface>
+      ) : null}
 
       {bannerMessage ? (
         <Surface
@@ -383,5 +402,25 @@ const styles = StyleSheet.create({
   },
   bannerTextError: {
     color: '#9B1C1C',
+  },
+  errorBox: {
+    backgroundColor: '#FDE8E8',
+    borderColor: '#F98080',
+    borderWidth: 1,
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  errorText: {
+    color: '#9B1C1C',
+    fontWeight: '600',
+    flex: 1,
+  },
+  retryBtn: {
+    borderRadius: 6,
   },
 });

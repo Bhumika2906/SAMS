@@ -6,7 +6,7 @@ let mongod: MongoMemoryServer | null = null;
 export async function setupTestDb(): Promise<void> {
   mongod = await MongoMemoryServer.create();
   const uri = mongod.getUri();
-  await mongoose.connect(uri);
+  await mongoose.connect(uri, { retryWrites: false });
 }
 
 export async function clearTestDb(): Promise<void> {

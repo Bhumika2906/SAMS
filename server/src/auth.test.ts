@@ -2,6 +2,7 @@ import { API_PREFIX, UserRole } from '@sams/shared';
 import request from 'supertest';
 import { createApp } from './app';
 import { authenticate, requireRoles, signToken } from './middleware/auth';
+import { errorHandler } from './errors';
 import { User } from './models';
 import { clearTestDb, setupTestDb, teardownTestDb } from './test/test-db';
 
@@ -25,6 +26,9 @@ app.get(
     res.json({ success: true, message: 'Faculty access granted' });
   },
 );
+
+// Central error handler for test routes
+app.use(errorHandler);
 
 jest.setTimeout(60000);
 
