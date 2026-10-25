@@ -156,6 +156,61 @@ applicationRouter.put('/me', async (req, res, next) => {
 });
 
 /**
+ * POST /applications/me/pay-fee
+ * UC-002: Pay application fee (₹1,000) before final review & submission
+ */
+applicationRouter.post('/me/pay-fee', async (req, res, next) => {
+  try {
+    const userId = req.user!.id;
+    const application = await Application.findOne({ userId });
+    if (!application) throw notFound('Application not found');
+    if (application.locked) {
+      throw conflict('Application has already been submitted and locked');
+    }
+
+    // Step 3 in UC-002: Check mandatory details before fee payment
+    const { personal, education, preferences } = application;
+    if (!personal?.phone || !personal?.gender) {
+      throw badRequest('Please complete Personal Details (Phone and Gender) before paying the application fee');
+    }
+    if (!education?.class12Score) {
+      throw badRequest('Please complete Academic Qualifications (Class 12 marks) before paying the application fee');
+    }
+    if (!preferences || preferences.length === 0) {
+      throw badRequest('Please select at least one branch preference before paying the application fee');
+    }
+
+    const { outcome } = req.body;
+    if (outcome === 'fail') {
+      sendSuccess(res, {
+        feePaid: false,
+        message: 'Payment simulated as Failed (Bank Gateway Declined). You can retry payment anytime.',
+      });
+      return;
+    }
+
+    const txnId = `TXN-APP-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const receiptNo = `RCP-APP-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
+    application.applicationFee = {
+      paid: true,
+      amount: 1000,
+      transactionId: txnId,
+      receiptNumber: receiptNo,
+      paidAt: new Date(),
+    };
+    await application.save();
+
+    sendSuccess(res, {
+      feePaid: true,
+      applicationFee: application.applicationFee,
+      message: 'Application fee of ₹1,000 paid successfully! Receipt generated. You can now review and submit your application.',
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
  * POST /applications/me/submit
  */
 applicationRouter.post('/me/submit', async (req, res, next) => {
@@ -177,6 +232,11 @@ applicationRouter.post('/me/submit', async (req, res, next) => {
     }
     if (!preferences || preferences.length === 0) {
       throw badRequest('Please select at least one branch preference');
+    }
+
+    // UC-002: Check application fee payment
+    if (!application.applicationFee?.paid) {
+      throw badRequest('Application fee of ₹1,000 must be paid before submitting and locking your application.');
     }
 
     application.locked = true;
@@ -294,8 +354,10 @@ applicationRouter.get('/me/tracker', async (req, res, next) => {
       { key: AdmissionStage.AdmissionConfirmed, label: 'Admission Confirmed' },
     ];
 
-    let nextAction = 'Fill and submit application form';
-    if (effectiveStage === AdmissionStage.Submitted) {
+    let nextAction = 'Fill application details & pay ₹1,000 application fee';
+    if (application.applicationFee?.paid && !application.locked) {
+      nextAction = 'Review application and submit before round deadline';
+    } else if (effectiveStage === AdmissionStage.Submitted) {
       nextAction = 'Wait for Round 1 seat allotment publication';
     } else if (effectiveStage === AdmissionStage.InRound) {
       nextAction = 'Review allotment and tap Accept or Decline';

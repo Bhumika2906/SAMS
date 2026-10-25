@@ -51,6 +51,13 @@ const applicationSchema = new Schema(
         preferenceOrder: { type: Number, required: true },
       },
     ],
+    applicationFee: {
+      paid: { type: Boolean, default: false },
+      amount: { type: Number, default: 1000 },
+      transactionId: { type: String, default: null },
+      receiptNumber: { type: String, default: null },
+      paidAt: { type: Date, default: null },
+    },
   },
   { timestamps: true },
 );

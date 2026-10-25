@@ -175,6 +175,7 @@ export async function seedDatabase(): Promise<void> {
     admissionStage: AdmissionStage.ApplicationInProgress,
     meritRank: 12,
     personal: { phone: '9876543210', gender: 'Male', dateOfBirth: '2008-05-14' },
+    applicationFee: { paid: false, amount: 1000 },
   });
   app1User.applicationId = app1._id as any;
   await app1User.save();
@@ -200,6 +201,13 @@ export async function seedDatabase(): Promise<void> {
       { programmeId: ece._id, preferenceOrder: 3 },
     ],
     personal: { phone: '9876543211', gender: 'Female', dateOfBirth: '2008-08-20' },
+    applicationFee: {
+      paid: true,
+      amount: 1000,
+      transactionId: 'TXN-APP-2026-002',
+      receiptNumber: 'RCP-APP-2026-002',
+      paidAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+    },
   });
   app2User.applicationId = app2._id as any;
   await app2User.save();
@@ -224,6 +232,13 @@ export async function seedDatabase(): Promise<void> {
       { programmeId: cce._id, preferenceOrder: 2 },
     ],
     personal: { phone: '9876543212', gender: 'Male', dateOfBirth: '2008-02-11' },
+    applicationFee: {
+      paid: true,
+      amount: 1000,
+      transactionId: 'TXN-APP-2026-003',
+      receiptNumber: 'RCP-APP-2026-003',
+      paidAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+    },
   });
   app3User.applicationId = app3._id as any;
   await app3User.save();
@@ -248,6 +263,13 @@ export async function seedDatabase(): Promise<void> {
       { programmeId: cce._id, preferenceOrder: 2 },
     ],
     personal: { phone: '9876543213', gender: 'Female', dateOfBirth: '2007-11-29' },
+    applicationFee: {
+      paid: true,
+      amount: 1000,
+      transactionId: 'TXN-APP-2026-004',
+      receiptNumber: 'RCP-APP-2026-004',
+      paidAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+    },
   });
   app4User.applicationId = app4._id as any;
   await app4User.save();
@@ -272,6 +294,13 @@ export async function seedDatabase(): Promise<void> {
       { programmeId: cse._id, preferenceOrder: 2 },
     ],
     personal: { phone: '9876543214', gender: 'Male', dateOfBirth: '2008-01-05' },
+    applicationFee: {
+      paid: true,
+      amount: 1000,
+      transactionId: 'TXN-APP-2026-005',
+      receiptNumber: 'RCP-APP-2026-005',
+      paidAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000),
+    },
   });
   app5User.applicationId = app5._id as any;
   await app5User.save();
@@ -293,6 +322,13 @@ export async function seedDatabase(): Promise<void> {
     submittedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
     preferences: [{ programmeId: ece._id, preferenceOrder: 1 }],
     personal: { phone: '9876543215', gender: 'Female', dateOfBirth: '2008-04-18' },
+    applicationFee: {
+      paid: true,
+      amount: 1000,
+      transactionId: 'TXN-APP-2026-006',
+      receiptNumber: 'RCP-APP-2026-006',
+      paidAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+    },
   });
   app6User.applicationId = app6._id as any;
   await app6User.save();
@@ -314,6 +350,13 @@ export async function seedDatabase(): Promise<void> {
     submittedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
     preferences: [{ programmeId: cse._id, preferenceOrder: 1 }],
     personal: { phone: '9876543216', gender: 'Male', dateOfBirth: '2007-09-30' },
+    applicationFee: {
+      paid: true,
+      amount: 1000,
+      transactionId: 'TXN-APP-2026-007',
+      receiptNumber: 'RCP-APP-2026-007',
+      paidAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
+    },
   });
   app7User.applicationId = app7._id as any;
   await app7User.save();

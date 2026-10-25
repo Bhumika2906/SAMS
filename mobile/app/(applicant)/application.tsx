@@ -21,6 +21,14 @@ export default function ApplicantApplicationScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [locked, setLocked] = useState(false);
+  const [feePaid, setFeePaid] = useState(false);
+  const [feeDetails, setFeeDetails] = useState<{
+    amount?: number;
+    transactionId?: string;
+    receiptNumber?: string;
+    paidAt?: string;
+  } | null>(null);
+  const [isPayingFee, setIsPayingFee] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
@@ -48,6 +56,10 @@ export default function ApplicantApplicationScreen() {
           setProgrammes(progs);
           if (app) {
             setLocked(!!app.locked);
+            if (app.applicationFee?.paid) {
+              setFeePaid(true);
+              setFeeDetails(app.applicationFee);
+            }
             if (app.personal?.phone) setPhone(app.personal.phone);
             if (app.personal?.gender) setGender(app.personal.gender);
             if (app.personal?.dateOfBirth) setDob(app.personal.dateOfBirth);
@@ -99,9 +111,38 @@ export default function ApplicantApplicationScreen() {
     }
   };
 
+  const handlePayFee = async (outcome: 'success' | 'fail' = 'success') => {
+    setErrorMsg(null);
+    setSuccessMsg(null);
+    setIsPayingFee(true);
+    try {
+      // Step 3 in UC-002: Save details first so mandatory details exist on server
+      await apiClient.put('/applications/me', buildPayload());
+      const res = await apiClient.post('/applications/me/pay-fee', { outcome });
+      if (res.data?.success && res.data.data.feePaid) {
+        setFeePaid(true);
+        setFeeDetails(res.data.data.applicationFee);
+        setSuccessMsg(res.data.data.message || 'Application fee paid successfully! Receipt generated.');
+      } else {
+        setErrorMsg(res.data?.data?.message || 'Payment simulated as Failed. You can retry payment anytime.');
+      }
+    } catch (err: any) {
+      setErrorMsg(err.response?.data?.error?.message || err.message || 'Payment failed.');
+    } finally {
+      setIsPayingFee(false);
+    }
+  };
+
   const handleSubmit = async () => {
     setErrorMsg(null);
     setSuccessMsg(null);
+
+    // UC-002: Require application fee payment before submission
+    if (!feePaid) {
+      setErrorMsg('Please pay the application fee of ₹1,000 before submitting your application.');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       // First save current inputs
@@ -116,7 +157,7 @@ export default function ApplicantApplicationScreen() {
         [{ text: 'OK', onPress: () => router.push('/(applicant)') }],
       );
     } catch (err: any) {
-      setErrorMsg(err.message || 'Submission failed.');
+      setErrorMsg(err.response?.data?.error?.message || err.message || 'Submission failed.');
     } finally {
       setIsSubmitting(false);
     }
@@ -274,29 +315,128 @@ export default function ApplicantApplicationScreen() {
           </Card.Content>
         </Card>
 
+        {/* Section 5: Application Processing Fee */}
+        <Card style={styles.card} mode="outlined">
+          <Card.Title title="5. Application Fee Payment" />
+          <Card.Content>
+            {feePaid ? (
+              <View style={styles.receiptContainer}>
+                <Surface style={styles.receiptHeader} elevation={0}>
+                  <Text variant="titleMedium" style={styles.receiptTitle}>
+                    ✓ Fee Paid & Receipt Generated
+                  </Text>
+                  <Chip mode="flat" style={styles.paidBadge} textStyle={styles.paidBadgeText}>
+                    ₹{feeDetails?.amount || 1000} PAID
+                  </Chip>
+                </Surface>
+
+                <View style={styles.receiptRow}>
+                  <Text variant="bodySmall" style={styles.receiptLabel}>
+                    Receipt Number:
+                  </Text>
+                  <Text variant="bodyMedium" style={styles.receiptValue}>
+                    {feeDetails?.receiptNumber || 'RCP-APP-CONFIRMED'}
+                  </Text>
+                </View>
+
+                <View style={styles.receiptRow}>
+                  <Text variant="bodySmall" style={styles.receiptLabel}>
+                    Transaction ID:
+                  </Text>
+                  <Text variant="bodyMedium" style={styles.receiptValue}>
+                    {feeDetails?.transactionId || 'TXN-APP-SIMULATED'}
+                  </Text>
+                </View>
+
+                {feeDetails?.paidAt ? (
+                  <View style={styles.receiptRow}>
+                    <Text variant="bodySmall" style={styles.receiptLabel}>
+                      Paid At:
+                    </Text>
+                    <Text variant="bodyMedium" style={styles.receiptValue}>
+                      {new Date(feeDetails.paidAt).toLocaleString()}
+                    </Text>
+                  </View>
+                ) : null}
+
+                <Text variant="bodySmall" style={styles.receiptNote}>
+                  Payment verified. You may now perform final review and submit your application below.
+                </Text>
+              </View>
+            ) : (
+              <View>
+                <Text variant="bodyMedium" style={styles.feeExplainer}>
+                  An application processing fee of <Text style={{ fontWeight: 'bold' }}>₹1,000</Text> is mandatory before submitting your application.
+                </Text>
+
+                <View style={styles.feeBreakdown}>
+                  <Text variant="bodyMedium">Application & Processing Fee:</Text>
+                  <Text variant="titleMedium" style={{ fontWeight: 'bold', color: theme.colors.primary }}>
+                    ₹1,000
+                  </Text>
+                </View>
+
+                {!locked ? (
+                  <View style={styles.paymentActions}>
+                    <Button
+                      mode="contained"
+                      onPress={() => handlePayFee('success')}
+                      loading={isPayingFee}
+                      disabled={isSaving || isSubmitting || isPayingFee}
+                      buttonColor="#059669"
+                      icon="credit-card-outline"
+                      style={styles.payBtn}
+                    >
+                      Pay ₹1,000 (Simulate Success)
+                    </Button>
+                    <Button
+                      mode="outlined"
+                      onPress={() => handlePayFee('fail')}
+                      loading={isPayingFee}
+                      disabled={isSaving || isSubmitting || isPayingFee}
+                      textColor="#DC2626"
+                      icon="alert-circle-outline"
+                      style={styles.failBtn}
+                    >
+                      Simulate Decline (Test Retry)
+                    </Button>
+                  </View>
+                ) : null}
+              </View>
+            )}
+          </Card.Content>
+        </Card>
+
         {/* Form Action Buttons */}
         {!locked ? (
-          <View style={styles.buttonGroup}>
-            <Button
-              mode="outlined"
-              onPress={handleSaveDraft}
-              loading={isSaving}
-              disabled={isSaving || isSubmitting}
-              textColor={theme.colors.primary}
-              style={styles.draftBtn}
-            >
-              Save Draft
-            </Button>
-            <Button
-              mode="contained"
-              onPress={handleSubmit}
-              loading={isSubmitting}
-              disabled={isSaving || isSubmitting}
-              buttonColor={theme.colors.primary}
-              style={styles.submitBtn}
-            >
-              Review & Submit
-            </Button>
+          <View>
+            {!feePaid ? (
+              <HelperText type="info" visible style={styles.feeNoticeText}>
+                ⚠️ Please pay the ₹1,000 application fee above to enable final submission.
+              </HelperText>
+            ) : null}
+            <View style={styles.buttonGroup}>
+              <Button
+                mode="outlined"
+                onPress={handleSaveDraft}
+                loading={isSaving}
+                disabled={isSaving || isSubmitting || isPayingFee}
+                textColor={theme.colors.primary}
+                style={styles.draftBtn}
+              >
+                Save Draft
+              </Button>
+              <Button
+                mode="contained"
+                onPress={handleSubmit}
+                loading={isSubmitting}
+                disabled={isSaving || isSubmitting || isPayingFee || !feePaid}
+                buttonColor={feePaid ? theme.colors.primary : '#94A3B8'}
+                style={styles.submitBtn}
+              >
+                Review & Submit
+              </Button>
+            </View>
           </View>
         ) : null}
       </ScrollView>
@@ -392,4 +532,80 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 140,
   },
+  feeNoticeText: {
+    color: '#D97706',
+    marginBottom: 8,
+    fontWeight: '600',
+  },
+  receiptContainer: {
+    backgroundColor: '#F0FDF4',
+    padding: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+  },
+  receiptHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+    marginBottom: 10,
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  receiptTitle: {
+    color: '#15803D',
+    fontWeight: '700',
+  },
+  paidBadge: {
+    backgroundColor: '#DCFCE7',
+  },
+  paidBadgeText: {
+    color: '#166534',
+    fontWeight: '800',
+  },
+  receiptRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 5,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+  },
+  receiptLabel: {
+    color: '#64748B',
+  },
+  receiptValue: {
+    color: '#0F172A',
+    fontWeight: '600',
+  },
+  receiptNote: {
+    color: '#15803D',
+    marginTop: 10,
+    fontStyle: 'italic',
+  },
+  feeExplainer: {
+    color: '#475569',
+    marginBottom: 10,
+    lineHeight: 20,
+  },
+  feeBreakdown: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#F1F5F9',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 14,
+  },
+  paymentActions: {
+    gap: 10,
+  },
+  payBtn: {
+    borderRadius: 8,
+  },
+  failBtn: {
+    borderColor: '#F87171',
+    borderRadius: 8,
+  },
 });
+
