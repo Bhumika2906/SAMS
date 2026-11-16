@@ -2,6 +2,7 @@ import { CounsellingService } from '../services/counselling.service';
 import {
   AdmissionStage,
   ApplicationStatus,
+  RoundStatus,
   SeatPublication,
   SeatResult,
   UserRole,
@@ -22,16 +23,22 @@ managementRouter.get(
     try {
       const currentRound = await AllotmentService.getCurrentRound();
 
-      // Count distinct current applicants who have an active published seat allotment
+      // Count distinct current applicants who have an active published or proposed seat allotment
       let allottedDistinctCount = 0;
       if (currentRound) {
-        const distinctApps = await SeatAllotment.distinct('applicationId', {
-
-          isActive: true,
-          publication: SeatPublication.Published,
-          result: SeatResult.Allotted,
-          response: { $in: ['Pending', 'Accepted', 'OptedNextRound'] },
-        });
+        const isRun = currentRound.status === RoundStatus.AllotmentRun;
+        const query: any = isRun
+          ? {
+              roundId: currentRound._id,
+              result: SeatResult.Allotted,
+            }
+          : {
+              isActive: true,
+              publication: SeatPublication.Published,
+              result: SeatResult.Allotted,
+              response: { $in: ['Pending', 'Accepted', 'OptedNextRound'] },
+            };
+        const distinctApps = await SeatAllotment.distinct('applicationId', query);
         allottedDistinctCount = distinctApps.length;
       }
 

@@ -1,4 +1,4 @@
-﻿import mongoose from 'mongoose';
+import mongoose from 'mongoose';
 import crypto from 'crypto';
 import {
   AdmissionStage,
@@ -66,10 +66,22 @@ export async function counsellingTransaction<T>(
 export class CounsellingService {
   static async inventory() {
     const programmes = await Programme.find().sort({ code: 1 });
-    const holdings = await SeatAllotment.find({
-      ...holdingQuery,
-      response: { $in: [SeatResponse.Pending, ...heldResponses] },
-    });
+    const latestRound = await AdmissionRound.findOne().sort({ roundNumber: -1 });
+
+    // If an allotment run has been calculated for the current round (Proposed),
+    // include those proposed allotments so allotted counts are immediately visible.
+    const hasProposed = latestRound?.status === RoundStatus.AllotmentRun;
+    const query = hasProposed
+      ? {
+          roundId: latestRound._id,
+          result: SeatResult.Allotted,
+        }
+      : {
+          ...holdingQuery,
+          response: { $in: [SeatResponse.Pending, ...heldResponses] },
+        };
+
+    const holdings = await SeatAllotment.find(query);
     const paidApplications = new Set(
       (
         await Payment.distinct('applicationId', {

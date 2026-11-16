@@ -20,7 +20,7 @@ export default function ApplicantProfileScreen() {
           Applicant Profile
         </Text>
         <Text variant="bodySmall" style={styles.subtitle}>
-          Personal account information and verified status.
+          Personal account information and registration details.
         </Text>
       </Surface>
 
@@ -34,13 +34,6 @@ export default function ApplicantProfileScreen() {
           <View style={styles.infoRow}>
             <Text variant="labelMedium" style={styles.label}>Email:</Text>
             <Text variant="bodyMedium" style={styles.value}>{user?.email}</Text>
-          </View>
-          <Divider style={styles.divider} />
-          <View style={styles.infoRow}>
-            <Text variant="labelMedium" style={styles.label}>Account Status:</Text>
-            <Text variant="bodyMedium" style={[styles.value, { color: '#047857' }]}>
-              {user?.verified ? 'Verified' : 'Unverified'}
-            </Text>
           </View>
           <Divider style={styles.divider} />
           <View style={styles.infoRow}>
