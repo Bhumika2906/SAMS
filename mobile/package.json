@@ -1,0 +1,47 @@
+{
+  "name": "@sams/mobile",
+  "version": "0.0.0",
+  "private": true,
+  "main": "expo-router/entry",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "typecheck": "tsc --noEmit",
+    "test": "jest --passWithNoTests",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@expo/metro-runtime": "~58.0.14",
+    "@expo/vector-icons": "^15.0.2",
+    "@hookform/resolvers": "^3.10.0",
+    "@sams/shared": "*",
+    "@tanstack/react-query": "^5.104.5",
+    "axios": "^1.20.0",
+    "expo": "~58.0.16",
+    "expo-constants": "~58.0.12",
+    "expo-linking": "~58.0.13",
+    "expo-router": "~58.0.24",
+    "expo-secure-store": "~58.0.2",
+    "expo-splash-screen": "~58.0.10",
+    "expo-status-bar": "~58.0.3",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "react-hook-form": "^7.90.0",
+    "react-native": "0.88.0",
+    "react-native-paper": "^5.15.3",
+    "react-native-safe-area-context": "~5.10.1",
+    "react-native-screens": "~4.30.0",
+    "react-native-web": "^0.21.4",
+    "zod": "^3.25.76",
+    "expo-document-picker": "~14.0.7",
+    "expo-camera": "~58.0.11",
+    "react-native-svg": "15.16.0",
+    "react-native-qrcode-svg": "^6.3.15"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/react": "~19.3.0",
+    "jest": "^30.2.0"
+  }
+}
